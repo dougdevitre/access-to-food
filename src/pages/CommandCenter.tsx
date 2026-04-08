@@ -1,7 +1,7 @@
 import { useState, useEffect, useMemo } from 'react';
-import { collection, getDocs, query } from 'firebase/firestore';
+import { collection, getDocs, getCountFromServer, query, orderBy, limit as fbLimit } from 'firebase/firestore';
 import { db } from '../firebase';
-import { AlertTriangle, Activity, Users, Map as MapIcon, ShieldAlert, TrendingUp, PackageX, CheckCircle2 } from 'lucide-react';
+import { AlertTriangle, Activity, Users, Map as MapIcon, TrendingUp, PackageX, CheckCircle2, HandHeart, Building2 } from 'lucide-react';
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Legend } from 'recharts';
 import ResourceMap, { MapMarker } from '../components/ResourceMap';
 
@@ -33,27 +33,65 @@ const RISK_ZONES = [
   { zip: '63107', neighborhood: 'Hyde Park', risk: 78, trend: '+8%' },
 ];
 
+interface RecentActivity {
+  type: 'donation' | 'volunteer' | 'scan' | 'corporate';
+  label: string;
+  time: string;
+}
+
 export default function CommandCenter() {
   const [pantries, setPantries] = useState<Pantry[]>([]);
   const [loading, setLoading] = useState(true);
   const [fetchError, setFetchError] = useState<string | null>(null);
+  const [donationCount, setDonationCount] = useState(0);
+  const [volunteerLogCount, setVolunteerLogCount] = useState(0);
+  const [scanCount, setScanCount] = useState(0);
+  const [corporateCount, setCorporateCount] = useState(0);
+  const [recentActivity, setRecentActivity] = useState<RecentActivity[]>([]);
 
   useEffect(() => {
-    async function fetchPantries() {
+    async function fetchAll() {
       try {
         setFetchError(null);
-        const q = query(collection(db, 'pantries'));
-        const snapshot = await getDocs(q);
-        const data = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as Pantry));
-        setPantries(data);
+        const [pantriesSnap, donations, volunteerLogs, scans, corporateInquiries] = await Promise.all([
+          getDocs(query(collection(db, 'pantries'))),
+          getCountFromServer(collection(db, 'donations')),
+          getCountFromServer(collection(db, 'volunteerLogs')),
+          getCountFromServer(collection(db, 'inventory_scans')),
+          getCountFromServer(collection(db, 'corporateInquiries')),
+        ]);
+        setPantries(pantriesSnap.docs.map(doc => ({ id: doc.id, ...doc.data() } as Pantry)));
+        setDonationCount(donations.data().count);
+        setVolunteerLogCount(volunteerLogs.data().count);
+        setScanCount(scans.data().count);
+        setCorporateCount(corporateInquiries.data().count);
+
+        // Fetch recent activity from multiple collections
+        const activity: RecentActivity[] = [];
+        const recentDonations = await getDocs(query(collection(db, 'donations'), orderBy('createdAt', 'desc'), fbLimit(3)));
+        recentDonations.forEach(doc => {
+          const d = doc.data();
+          activity.push({ type: 'donation', label: `Food donation (${d.weightLbs || '?'} lbs) at ${d.location || 'unknown'}`, time: d.createdAt?.toDate?.()?.toLocaleDateString() || 'Recent' });
+        });
+        const recentLogs = await getDocs(query(collection(db, 'volunteerLogs'), orderBy('loggedAt', 'desc'), fbLimit(3)));
+        recentLogs.forEach(doc => {
+          const d = doc.data();
+          activity.push({ type: 'volunteer', label: `${d.hours || '?'}h logged for ${d.shiftName || 'shift'}`, time: d.loggedAt?.toDate?.()?.toLocaleDateString() || 'Recent' });
+        });
+        const recentScans = await getDocs(query(collection(db, 'inventory_scans'), orderBy('scannedAt', 'desc'), fbLimit(2)));
+        recentScans.forEach(doc => {
+          const d = doc.data();
+          activity.push({ type: 'scan', label: `Inventory scan: ${d.totalCategories || '?'} categories, ${d.criticalCount || 0} critical`, time: d.scannedAt?.toDate?.()?.toLocaleDateString() || 'Recent' });
+        });
+        setRecentActivity(activity);
       } catch (error) {
-        console.error('Error fetching pantries:', error);
+        console.error('Error fetching dashboard data:', error);
         setFetchError('Unable to load dashboard data. Please try again.');
       } finally {
         setLoading(false);
       }
     }
-    fetchPantries();
+    fetchAll();
   }, []);
 
   const mapMarkers: MapMarker[] = useMemo(() => {
@@ -73,11 +111,6 @@ export default function CommandCenter() {
     return pantries.filter(p => p.inventoryStatus === 'empty' || p.inventoryStatus === 'low');
   }, [pantries]);
   
-  const fillRate = useMemo(() => {
-    const needed = STAFFING_DATA.reduce((acc, curr) => acc + curr.needed, 0);
-    const filled = STAFFING_DATA.reduce((acc, curr) => acc + curr.filled, 0);
-    return Math.round((filled / needed) * 100);
-  }, []);
 
   return (
     <div className="max-w-6xl mx-auto space-y-6">
@@ -98,55 +131,61 @@ export default function CommandCenter() {
       )}
 
       {/* Top Metrics */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-        <div className="bg-white p-6 rounded-3xl border border-stone-100 shadow-[0_2px_8px_rgba(0,0,0,0.04)]">
-          <div className="flex justify-between items-start mb-4">
-            <div className="bg-blue-50 p-2.5 rounded-xl">
-              <MapIcon className="w-5 h-5 text-blue-600" />
-            </div>
-          </div>
-          <div>
-            <h3 className="text-4xl font-light text-stone-800 tracking-tight">{pantries.length || '--'}</h3>
-            <p className="text-sm font-medium text-stone-500 mt-1">Active Pantries</p>
-          </div>
+      <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-4">
+        <div className="bg-white p-5 rounded-2xl border border-stone-100 shadow-[0_2px_8px_rgba(0,0,0,0.04)]">
+          <MapIcon className="w-5 h-5 text-blue-600 mb-3" />
+          <h3 className="text-3xl font-light text-stone-800 tracking-tight">{pantries.length || '--'}</h3>
+          <p className="text-xs font-medium text-stone-500 mt-1">Active Pantries</p>
         </div>
-        
-        <div className="bg-white p-6 rounded-3xl border border-stone-100 shadow-[0_2px_8px_rgba(0,0,0,0.04)]">
-          <div className="flex justify-between items-start mb-4">
-            <div className="bg-rose-50 p-2.5 rounded-xl">
-              <AlertTriangle className="w-5 h-5 text-rose-600" />
-            </div>
-          </div>
-          <div>
-            <h3 className="text-4xl font-light text-rose-600 tracking-tight">{criticalPantries.length || '--'}</h3>
-            <p className="text-sm font-medium text-stone-500 mt-1">Critical Alerts</p>
-          </div>
+        <div className="bg-white p-5 rounded-2xl border border-stone-100 shadow-[0_2px_8px_rgba(0,0,0,0.04)]">
+          <AlertTriangle className="w-5 h-5 text-rose-600 mb-3" />
+          <h3 className="text-3xl font-light text-rose-600 tracking-tight">{criticalPantries.length || '--'}</h3>
+          <p className="text-xs font-medium text-stone-500 mt-1">Critical Alerts</p>
         </div>
-
-        <div className="bg-white p-6 rounded-3xl border border-stone-100 shadow-[0_2px_8px_rgba(0,0,0,0.04)]">
-          <div className="flex justify-between items-start mb-4">
-            <div className="bg-emerald-50 p-2.5 rounded-xl">
-              <Users className="w-5 h-5 text-emerald-600" />
-            </div>
-          </div>
-          <div>
-            <h3 className="text-4xl font-light text-stone-800 tracking-tight">{fillRate}%</h3>
-            <p className="text-sm font-medium text-stone-500 mt-1">Volunteer Fill Rate</p>
-          </div>
+        <div className="bg-white p-5 rounded-2xl border border-stone-100 shadow-[0_2px_8px_rgba(0,0,0,0.04)]">
+          <Users className="w-5 h-5 text-emerald-600 mb-3" />
+          <h3 className="text-3xl font-light text-stone-800 tracking-tight">{volunteerLogCount}</h3>
+          <p className="text-xs font-medium text-stone-500 mt-1">Volunteer Logs</p>
         </div>
-
-        <div className="bg-white p-6 rounded-3xl border border-stone-100 shadow-[0_2px_8px_rgba(0,0,0,0.04)]">
-          <div className="flex justify-between items-start mb-4">
-            <div className="bg-amber-50 p-2.5 rounded-xl">
-              <ShieldAlert className="w-5 h-5 text-amber-600" />
-            </div>
-          </div>
-          <div>
-            <h3 className="text-4xl font-light text-amber-600 tracking-tight">{RISK_ZONES.length}</h3>
-            <p className="text-sm font-medium text-stone-500 mt-1">High Risk Zones</p>
-          </div>
+        <div className="bg-white p-5 rounded-2xl border border-stone-100 shadow-[0_2px_8px_rgba(0,0,0,0.04)]">
+          <HandHeart className="w-5 h-5 text-indigo-600 mb-3" />
+          <h3 className="text-3xl font-light text-stone-800 tracking-tight">{donationCount}</h3>
+          <p className="text-xs font-medium text-stone-500 mt-1">Donations</p>
+        </div>
+        <div className="bg-white p-5 rounded-2xl border border-stone-100 shadow-[0_2px_8px_rgba(0,0,0,0.04)]">
+          <PackageX className="w-5 h-5 text-sky-600 mb-3" />
+          <h3 className="text-3xl font-light text-stone-800 tracking-tight">{scanCount}</h3>
+          <p className="text-xs font-medium text-stone-500 mt-1">Inventory Scans</p>
+        </div>
+        <div className="bg-white p-5 rounded-2xl border border-stone-100 shadow-[0_2px_8px_rgba(0,0,0,0.04)]">
+          <Building2 className="w-5 h-5 text-amber-600 mb-3" />
+          <h3 className="text-3xl font-light text-stone-800 tracking-tight">{corporateCount}</h3>
+          <p className="text-xs font-medium text-stone-500 mt-1">Corporate Leads</p>
         </div>
       </div>
+
+      {/* Recent Activity Feed */}
+      {recentActivity.length > 0 && (
+        <div className="bg-white rounded-2xl border border-stone-100 shadow-[0_2px_8px_rgba(0,0,0,0.04)] p-6">
+          <h2 className="font-semibold text-stone-800 mb-4 flex items-center gap-2">
+            <Activity className="w-5 h-5 text-emerald-500" />
+            Recent Activity
+          </h2>
+          <div className="space-y-3">
+            {recentActivity.map((item, idx) => (
+              <div key={idx} className="flex items-center gap-3 text-sm">
+                <div className={`w-2 h-2 rounded-full shrink-0 ${
+                  item.type === 'donation' ? 'bg-indigo-500' :
+                  item.type === 'volunteer' ? 'bg-amber-500' :
+                  item.type === 'scan' ? 'bg-sky-500' : 'bg-emerald-500'
+                }`} />
+                <span className="text-stone-700 font-medium flex-grow">{item.label}</span>
+                <span className="text-stone-400 text-xs shrink-0">{item.time}</span>
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
 
       <div className="grid lg:grid-cols-3 gap-6">
         {/* Map Section */}

@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { Link } from 'react-router-dom';
-import { Calendar, HeartHandshake, Gift, FileText, AlertTriangle, ArrowRight, Search, Info } from 'lucide-react';
+import { Calendar, HeartHandshake, Gift, FileText, AlertTriangle, ArrowRight, Search, Info, Building2 } from 'lucide-react';
+import ImpactStats from '../components/ImpactStats';
 
 export default function Home() {
   const [intent, setIntent] = useState<'get_help' | 'give_help'>('get_help');
@@ -13,6 +14,11 @@ export default function Home() {
         <p className="text-stone-500 font-medium px-4">
           Your community hub for food resources. Part of the access-to series.
         </p>
+      </div>
+
+      {/* Community Impact */}
+      <div className="px-4">
+        <ImpactStats variant="compact" />
       </div>
 
       {/* Intent Toggle */}
@@ -132,8 +138,25 @@ export default function Home() {
               </Link>
             </div>
 
+            {/* Corporate */}
+            <Link
+              to="/corporate"
+              className="bg-white border border-stone-100 hover:border-stone-200 text-stone-800 rounded-3xl p-6 flex items-center justify-between shadow-[0_2px_8px_rgba(0,0,0,0.04)] hover:shadow-[0_8px_24px_rgba(0,0,0,0.06)] transition-all active:scale-95"
+            >
+              <div className="flex items-center gap-5">
+                <div className="bg-stone-800 p-4 rounded-2xl">
+                  <Building2 className="w-6 h-6 text-white" />
+                </div>
+                <div className="flex flex-col text-left">
+                  <span className="font-semibold text-lg text-stone-800">Corporate Partnerships</span>
+                  <span className="text-stone-500 text-sm font-medium">Company giving, matching & team volunteering</span>
+                </div>
+              </div>
+              <ArrowRight className="w-5 h-5 text-stone-400" />
+            </Link>
+
             {/* Partner Login */}
-            <div className="mt-8 bg-white border border-stone-100 shadow-[0_2px_8px_rgba(0,0,0,0.04)] rounded-3xl p-8 text-center space-y-4">
+            <div className="mt-4 bg-white border border-stone-100 shadow-[0_2px_8px_rgba(0,0,0,0.04)] rounded-3xl p-8 text-center space-y-4">
               <h3 className="font-semibold text-xl text-stone-800">Are you a Partner Agency?</h3>
               <p className="text-sm text-stone-500">Manage your inventory, update hours, and coordinate with our network of community partners.</p>
               <Link 

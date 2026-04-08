@@ -2,6 +2,8 @@ import React, { useState, useRef } from 'react';
 import { Heart, Utensils, Camera, CheckCircle2, Calculator, Users, Package, ArrowLeft, Loader2 } from 'lucide-react';
 import { collection, addDoc, serverTimestamp } from 'firebase/firestore';
 import { db } from '../firebase';
+import NextSteps from '../components/NextSteps';
+import ShareInvite from '../components/ShareInvite';
 
 export default function Donate() {
   const [activeTab, setActiveTab] = useState<'monetary' | 'food'>('monetary');
@@ -130,6 +132,8 @@ export default function Donate() {
                 >
                   <ArrowLeft className="w-4 h-4" /> Make another donation
                 </button>
+                <NextSteps context="donated" />
+                <ShareInvite context="donate" />
               </div>
             ) : (
               <button
@@ -176,6 +180,7 @@ export default function Donate() {
                 >
                   <ArrowLeft className="w-4 h-4" /> Log another donation
                 </button>
+                <NextSteps context="donated" />
               </div>
             )}
             <form className="space-y-6" onSubmit={async (e) => {

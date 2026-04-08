@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { Link } from 'react-router-dom';
 import { MapPin, Calendar, Phone, ArrowRight, AlertTriangle } from 'lucide-react';
+import ShareInvite from '../components/ShareInvite';
 
 export default function NeedFood() {
   const [step, setStep] = useState(1);
@@ -114,6 +115,8 @@ export default function NeedFood() {
           </div>
         )}
       </div>
+
+      <ShareInvite context="food" />
     </div>
   );
 }

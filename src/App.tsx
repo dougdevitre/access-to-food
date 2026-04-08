@@ -15,6 +15,7 @@ const Resources = lazy(() => import('./pages/Resources'));
 const Assistant = lazy(() => import('./pages/Assistant'));
 const Scanner = lazy(() => import('./pages/Scanner'));
 const CommandCenter = lazy(() => import('./pages/CommandCenter'));
+const Corporate = lazy(() => import('./pages/Corporate'));
 
 // Loading fallback
 const PageLoader = () => (
@@ -52,6 +53,7 @@ export default function App() {
               <Route path="resources" element={<Resources />} />
               <Route path="assistant" element={<Assistant />} />
               <Route path="scanner" element={<Scanner />} />
+              <Route path="corporate" element={<Corporate />} />
               <Route path="dashboard" element={<CommandCenter />} />
               <Route path="*" element={<NotFound />} />
             </Route>

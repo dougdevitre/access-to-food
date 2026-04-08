@@ -2,6 +2,7 @@ import { useState } from 'react';
 import { FileText, Phone, CheckCircle2, ArrowRight, Calculator, AlertCircle, ArrowLeft, Loader2 } from 'lucide-react';
 import { collection, addDoc, serverTimestamp } from 'firebase/firestore';
 import { db } from '../firebase';
+import NextSteps from '../components/NextSteps';
 
 export default function Snap() {
   const [householdSize, setHouseholdSize] = useState<number>(1);
@@ -132,12 +133,15 @@ export default function Snap() {
             </a>
             
             {callbackSubmitted ? (
-              <div className="bg-emerald-50 border border-emerald-200 rounded-xl p-5 text-center space-y-2 animate-in fade-in duration-300">
-                <CheckCircle2 className="w-8 h-8 text-emerald-600 mx-auto" />
-                <h4 className="font-bold text-emerald-800">Request received!</h4>
-                <p className="text-emerald-700 text-sm font-medium">
-                  Our SNAP team will call you back within 1 business day.
-                </p>
+              <div className="space-y-4 animate-in fade-in duration-300">
+                <div className="bg-emerald-50 border border-emerald-200 rounded-xl p-5 text-center space-y-2">
+                  <CheckCircle2 className="w-8 h-8 text-emerald-600 mx-auto" />
+                  <h4 className="font-bold text-emerald-800">Request received!</h4>
+                  <p className="text-emerald-700 text-sm font-medium">
+                    Our SNAP team will call you back within 1 business day.
+                  </p>
+                </div>
+                <NextSteps context="snap" />
               </div>
             ) : showCallbackForm ? (
               <form

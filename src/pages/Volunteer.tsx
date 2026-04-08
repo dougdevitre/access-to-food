@@ -2,6 +2,7 @@ import React, { useState, useRef, useMemo } from 'react';
 import { Camera, CheckCircle2, Calendar, Clock, Search, MapPin, Users, Bell, CalendarPlus, ChevronRight, List, Map as MapIcon, Navigation, AlertCircle, Loader2 } from 'lucide-react';
 import { collection, addDoc, serverTimestamp } from 'firebase/firestore';
 import { db } from '../firebase';
+import ShareInvite from '../components/ShareInvite';
 import ResourceMap, { MapMarker } from '../components/ResourceMap';
 
 interface VolunteerShift {
@@ -476,6 +477,9 @@ export default function Volunteer() {
                 </div>
               </div>
             ))
+          )}
+          {upcomingShifts.length > 0 && (
+            <ShareInvite context="volunteer" />
           )}
         </div>
       )}
