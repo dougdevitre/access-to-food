@@ -1,6 +1,7 @@
 import { Suspense, lazy } from 'react';
 import { BrowserRouter, Routes, Route } from 'react-router-dom';
 import Layout from './components/Layout';
+import ErrorBoundary from './components/ErrorBoundary';
 
 // Lazy load pages for better initial load performance
 const Home = lazy(() => import('./pages/Home'));
@@ -22,26 +23,41 @@ const PageLoader = () => (
   </div>
 );
 
+// 404 page
+const NotFound = () => (
+  <div className="flex flex-col items-center justify-center min-h-[50vh] p-8 text-center">
+    <h1 className="text-6xl font-black text-stone-300 mb-4">404</h1>
+    <h2 className="text-xl font-bold text-stone-800 mb-2">Page not found</h2>
+    <p className="text-stone-500 mb-6">The page you're looking for doesn't exist or has been moved.</p>
+    <a href="/" className="bg-emerald-700 text-white px-6 py-3 rounded-xl font-medium hover:bg-emerald-800 transition-colors">
+      Go Home
+    </a>
+  </div>
+);
+
 export default function App() {
   return (
-    <BrowserRouter>
-      <Suspense fallback={<PageLoader />}>
-        <Routes>
-          <Route path="/" element={<Layout />}>
-            <Route index element={<Home />} />
-            <Route path="need-food" element={<NeedFood />} />
-            <Route path="pantries" element={<Pantries />} />
-            <Route path="events" element={<Events />} />
-            <Route path="volunteer" element={<Volunteer />} />
-            <Route path="donate" element={<Donate />} />
-            <Route path="snap" element={<Snap />} />
-            <Route path="resources" element={<Resources />} />
-            <Route path="assistant" element={<Assistant />} />
-            <Route path="scanner" element={<Scanner />} />
-            <Route path="dashboard" element={<CommandCenter />} />
-          </Route>
-        </Routes>
-      </Suspense>
-    </BrowserRouter>
+    <ErrorBoundary>
+      <BrowserRouter>
+        <Suspense fallback={<PageLoader />}>
+          <Routes>
+            <Route path="/" element={<Layout />}>
+              <Route index element={<Home />} />
+              <Route path="need-food" element={<NeedFood />} />
+              <Route path="pantries" element={<Pantries />} />
+              <Route path="events" element={<Events />} />
+              <Route path="volunteer" element={<Volunteer />} />
+              <Route path="donate" element={<Donate />} />
+              <Route path="snap" element={<Snap />} />
+              <Route path="resources" element={<Resources />} />
+              <Route path="assistant" element={<Assistant />} />
+              <Route path="scanner" element={<Scanner />} />
+              <Route path="dashboard" element={<CommandCenter />} />
+              <Route path="*" element={<NotFound />} />
+            </Route>
+          </Routes>
+        </Suspense>
+      </BrowserRouter>
+    </ErrorBoundary>
   );
 }

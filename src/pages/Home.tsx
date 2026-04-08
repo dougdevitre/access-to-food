@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { Link } from 'react-router-dom';
-import { MapPin, Calendar, HeartHandshake, Gift, FileText, AlertTriangle, ArrowRight, Search, Info } from 'lucide-react';
+import { Calendar, HeartHandshake, Gift, FileText, AlertTriangle, ArrowRight, Search, Info } from 'lucide-react';
 
 export default function Home() {
   const [intent, setIntent] = useState<'get_help' | 'give_help'>('get_help');

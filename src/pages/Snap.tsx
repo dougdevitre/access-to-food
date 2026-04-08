@@ -1,5 +1,7 @@
-import React, { useState } from 'react';
-import { FileText, Phone, CheckCircle2, ArrowRight, Calculator, AlertCircle, ArrowLeft } from 'lucide-react';
+import { useState } from 'react';
+import { FileText, Phone, CheckCircle2, ArrowRight, Calculator, AlertCircle, ArrowLeft, Loader2 } from 'lucide-react';
+import { collection, addDoc, serverTimestamp } from 'firebase/firestore';
+import { db } from '../firebase';
 
 export default function Snap() {
   const [householdSize, setHouseholdSize] = useState<number>(1);
@@ -9,6 +11,7 @@ export default function Snap() {
   const [callbackSubmitted, setCallbackSubmitted] = useState(false);
   const [callbackName, setCallbackName] = useState('');
   const [callbackPhone, setCallbackPhone] = useState('');
+  const [isSubmittingCallback, setIsSubmittingCallback] = useState(false);
 
   // Simplified 2024 Gross Monthly Income Limits (130% FPL) for demonstration
   const calculateEligibility = () => {
@@ -139,10 +142,24 @@ export default function Snap() {
             ) : showCallbackForm ? (
               <form
                 className="space-y-4 animate-in fade-in slide-in-from-bottom-2 duration-200"
-                onSubmit={(e) => {
+                onSubmit={async (e) => {
                   e.preventDefault();
-                  setCallbackSubmitted(true);
-                  setShowCallbackForm(false);
+                  setIsSubmittingCallback(true);
+                  try {
+                    await addDoc(collection(db, 'callbackRequests'), {
+                      name: callbackName,
+                      phone: callbackPhone,
+                      type: 'snap',
+                      status: 'pending',
+                      createdAt: serverTimestamp(),
+                    });
+                    setCallbackSubmitted(true);
+                    setShowCallbackForm(false);
+                  } catch (err) {
+                    console.error('Error submitting callback:', err);
+                  } finally {
+                    setIsSubmittingCallback(false);
+                  }
                 }}
               >
                 <div>
@@ -169,9 +186,11 @@ export default function Snap() {
                 </div>
                 <button
                   type="submit"
-                  className="w-full bg-blue-600 text-white font-medium py-3 rounded-xl hover:bg-blue-700 transition-colors shadow-sm"
+                  disabled={isSubmittingCallback}
+                  className="w-full bg-blue-600 text-white font-medium py-3 rounded-xl hover:bg-blue-700 transition-colors shadow-sm disabled:opacity-50 flex items-center justify-center gap-2"
                 >
-                  Submit Request
+                  {isSubmittingCallback && <Loader2 className="w-4 h-4 animate-spin" />}
+                  {isSubmittingCallback ? 'Submitting...' : 'Submit Request'}
                 </button>
                 <button
                   type="button"

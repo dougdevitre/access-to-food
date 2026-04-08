@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useMemo } from 'react';
+import { useState, useEffect, useMemo } from 'react';
 import { collection, getDocs, query } from 'firebase/firestore';
 import { db } from '../firebase';
 import { AlertTriangle, Activity, Users, Map as MapIcon, ShieldAlert, TrendingUp, PackageX, CheckCircle2 } from 'lucide-react';
@@ -36,16 +36,19 @@ const RISK_ZONES = [
 export default function CommandCenter() {
   const [pantries, setPantries] = useState<Pantry[]>([]);
   const [loading, setLoading] = useState(true);
+  const [fetchError, setFetchError] = useState<string | null>(null);
 
   useEffect(() => {
     async function fetchPantries() {
       try {
+        setFetchError(null);
         const q = query(collection(db, 'pantries'));
         const snapshot = await getDocs(q);
         const data = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as Pantry));
         setPantries(data);
       } catch (error) {
         console.error('Error fetching pantries:', error);
+        setFetchError('Unable to load dashboard data. Please try again.');
       } finally {
         setLoading(false);
       }
@@ -70,14 +73,10 @@ export default function CommandCenter() {
     return pantries.filter(p => p.inventoryStatus === 'empty' || p.inventoryStatus === 'low');
   }, [pantries]);
   
-  const { totalNeeded, totalFilled, fillRate } = useMemo(() => {
+  const fillRate = useMemo(() => {
     const needed = STAFFING_DATA.reduce((acc, curr) => acc + curr.needed, 0);
     const filled = STAFFING_DATA.reduce((acc, curr) => acc + curr.filled, 0);
-    return {
-      totalNeeded: needed,
-      totalFilled: filled,
-      fillRate: Math.round((filled / needed) * 100)
-    };
+    return Math.round((filled / needed) * 100);
   }, []);
 
   return (
@@ -89,6 +88,14 @@ export default function CommandCenter() {
         </h1>
         <p className="text-stone-600">Real-time regional overview of food access, inventory, and volunteer staffing.</p>
       </div>
+
+      {fetchError && (
+        <div className="bg-rose-50 text-rose-700 p-4 rounded-xl border border-rose-200 flex items-center gap-3">
+          <AlertTriangle className="w-5 h-5 shrink-0" />
+          <span className="text-sm font-medium">{fetchError}</span>
+          <button onClick={() => window.location.reload()} className="ml-auto text-sm font-medium hover:underline shrink-0">Retry</button>
+        </div>
+      )}
 
       {/* Top Metrics */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">

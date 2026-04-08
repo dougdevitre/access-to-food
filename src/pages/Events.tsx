@@ -1,7 +1,7 @@
 import { useState, useEffect, useMemo } from 'react';
 import { collection, getDocs, query, orderBy, where } from 'firebase/firestore';
 import { db } from '../firebase';
-import { Calendar, MapPin, Clock, AlertCircle, List, Map as MapIcon, Navigation } from 'lucide-react';
+import { MapPin, Clock, AlertCircle, List, Map as MapIcon, Navigation } from 'lucide-react';
 import { format } from 'date-fns';
 import ResourceMap, { MapMarker } from '../components/ResourceMap';
 
@@ -37,10 +37,12 @@ export default function Events() {
   const [userLocation, setUserLocation] = useState<{lat: number, lng: number} | null>(null);
   const [isLocating, setIsLocating] = useState(false);
   const [locationError, setLocationError] = useState<string | null>(null);
+  const [fetchError, setFetchError] = useState<string | null>(null);
 
   useEffect(() => {
     async function fetchEvents() {
       try {
+        setFetchError(null);
         const now = new Date();
         // Only show upcoming events
         const q = query(
@@ -54,11 +56,12 @@ export default function Events() {
           // Mock coordinates if missing (around St. Louis)
           const lat = eventData.latitude || 38.6270 + (Math.random() - 0.5) * 0.2;
           const lng = eventData.longitude || -90.1994 + (Math.random() - 0.5) * 0.2;
-          return { id: doc.id, ...eventData, latitude: lat, longitude: lng };
+          return { ...eventData, id: doc.id, latitude: lat, longitude: lng };
         });
         setEvents(data);
       } catch (error) {
         console.error('Error fetching events:', error);
+        setFetchError('Unable to load events. Please check your connection and try again.');
       } finally {
         setLoading(false);
       }
@@ -204,8 +207,18 @@ export default function Events() {
         </div>
       )}
 
-      {loading ? (
-        <div className="text-center py-12 text-stone-500">Loading events...</div>
+      {fetchError ? (
+        <div className="text-center py-12 bg-white rounded-2xl border border-rose-200">
+          <AlertCircle className="w-12 h-12 text-rose-400 mx-auto mb-3" />
+          <h3 className="text-lg font-medium text-stone-800">Failed to load events</h3>
+          <p className="text-stone-500 mb-4">{fetchError}</p>
+          <button onClick={() => window.location.reload()} className="text-emerald-700 font-medium hover:underline">Try again</button>
+        </div>
+      ) : loading ? (
+        <div className="text-center py-12 text-stone-500">
+          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-emerald-600 mx-auto mb-3"></div>
+          Loading events...
+        </div>
       ) : sortedEvents.length === 0 ? (
         <div className="text-center py-12 bg-white rounded-2xl border border-stone-200">
           <AlertCircle className="w-12 h-12 text-stone-400 mx-auto mb-3" />

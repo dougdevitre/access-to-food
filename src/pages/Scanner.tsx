@@ -1,5 +1,5 @@
 import React, { useState, useRef } from 'react';
-import { Camera, Upload, Loader2, CheckCircle2, AlertCircle, PackageSearch, AlertTriangle, Info, Save } from 'lucide-react';
+import { Camera, Loader2, CheckCircle2, AlertCircle, PackageSearch, AlertTriangle, Info, Save } from 'lucide-react';
 import { GoogleGenAI, Type } from '@google/genai';
 import { collection, addDoc, serverTimestamp } from 'firebase/firestore';
 import { db } from '../firebase';

@@ -1,5 +1,7 @@
 import React, { useState, useRef, useMemo } from 'react';
-import { Camera, Upload, CheckCircle2, Calendar, Clock, Search, MapPin, Users, Bell, CalendarPlus, ChevronRight, List, Map as MapIcon, Navigation, AlertCircle } from 'lucide-react';
+import { Camera, CheckCircle2, Calendar, Clock, Search, MapPin, Users, Bell, CalendarPlus, ChevronRight, List, Map as MapIcon, Navigation, AlertCircle, Loader2 } from 'lucide-react';
+import { collection, addDoc, serverTimestamp } from 'firebase/firestore';
+import { db } from '../firebase';
 import ResourceMap, { MapMarker } from '../components/ResourceMap';
 
 interface VolunteerShift {
@@ -90,6 +92,9 @@ export default function Volunteer() {
   const [userLocation, setUserLocation] = useState<{lat: number, lng: number} | null>(null);
   const [isLocating, setIsLocating] = useState(false);
   const [locationError, setLocationError] = useState<string | null>(null);
+  const [logShiftId, setLogShiftId] = useState('');
+  const [logHours, setLogHours] = useState('');
+  const [isSubmittingLog, setIsSubmittingLog] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   const handleGetLocation = () => {
@@ -479,10 +484,37 @@ export default function Volunteer() {
         <div className="bg-white rounded-3xl p-8 border border-stone-100 shadow-[0_2px_8px_rgba(0,0,0,0.04)] max-w-xl mx-auto">
           <h3 className="text-xl font-semibold text-stone-800 mb-6">Log Volunteer Hours</h3>
           
-          <form className="space-y-6" onSubmit={(e) => { e.preventDefault(); showNotification('Hours logged successfully!'); }}>
+          <form className="space-y-6" onSubmit={async (e) => {
+            e.preventDefault();
+            if (!logShiftId || !logHours) return;
+            setIsSubmittingLog(true);
+            try {
+              const shift = MOCK_SHIFTS.find(s => s.event_id === logShiftId);
+              await addDoc(collection(db, 'volunteerLogs'), {
+                shiftId: logShiftId,
+                shiftName: shift?.event_name || 'Unknown',
+                hours: Number(logHours),
+                loggedAt: serverTimestamp(),
+              });
+              showNotification('Hours logged successfully!');
+              setLogShiftId('');
+              setLogHours('');
+              setPhoto(null);
+            } catch (err) {
+              console.error('Error logging hours:', err);
+              showNotification('Failed to log hours. Please try again.');
+            } finally {
+              setIsSubmittingLog(false);
+            }
+          }}>
             <div>
               <label className="block text-sm font-medium text-stone-700 mb-2">Select Shift</label>
-              <select className="w-full border border-stone-200 rounded-xl px-4 py-3 focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:border-transparent bg-stone-50 hover:bg-stone-100 transition-colors cursor-pointer">
+              <select
+                value={logShiftId}
+                onChange={(e) => setLogShiftId(e.target.value)}
+                required
+                className="w-full border border-stone-200 rounded-xl px-4 py-3 focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:border-transparent bg-stone-50 hover:bg-stone-100 transition-colors cursor-pointer"
+              >
                 <option value="">Select a past shift...</option>
                 <option value="1">Mobile Market - Mar 10, 2026</option>
                 <option value="2">Pantry Sorting - Mar 12, 2026</option>
@@ -502,12 +534,14 @@ export default function Volunteer() {
               <label className="block text-sm font-medium text-stone-700 mb-2">Hours Completed</label>
               <div className="relative">
                 <Clock className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-stone-400" />
-                <input 
-                  type="number" 
-                  min="0.5" 
-                  step="0.5" 
-                  placeholder="e.g. 2.5" 
+                <input
+                  type="number"
+                  min="0.5"
+                  step="0.5"
+                  placeholder="e.g. 2.5"
                   required
+                  value={logHours}
+                  onChange={(e) => setLogHours(e.target.value)}
                   className="w-full pl-12 pr-4 py-3 border border-stone-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:border-transparent bg-stone-50 hover:bg-stone-100 transition-colors"
                 />
               </div>
@@ -548,9 +582,9 @@ export default function Volunteer() {
               />
             </div>
 
-            <button type="submit" className="w-full bg-emerald-700 text-white font-medium py-3.5 rounded-xl hover:bg-emerald-800 transition-colors flex items-center justify-center gap-2 mt-8">
-              <CheckCircle2 className="w-5 h-5" />
-              Submit Hours
+            <button type="submit" disabled={isSubmittingLog} className="w-full bg-emerald-700 text-white font-medium py-3.5 rounded-xl hover:bg-emerald-800 transition-colors flex items-center justify-center gap-2 mt-8 disabled:opacity-50">
+              {isSubmittingLog ? <Loader2 className="w-5 h-5 animate-spin" /> : <CheckCircle2 className="w-5 h-5" />}
+              {isSubmittingLog ? 'Submitting...' : 'Submit Hours'}
             </button>
           </form>
         </div>

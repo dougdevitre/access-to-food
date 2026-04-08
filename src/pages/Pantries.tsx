@@ -46,18 +46,20 @@ export default function Pantries() {
   const [locationError, setLocationError] = useState<string | null>(null);
   const [viewMode, setViewMode] = useState<'list' | 'map'>('list');
   const [expandedPantry, setExpandedPantry] = useState<string | null>(null);
+  const [fetchError, setFetchError] = useState<string | null>(null);
 
   useEffect(() => {
     async function fetchPantries() {
       try {
+        setFetchError(null);
         const q = query(collection(db, 'pantries'));
         const snapshot = await getDocs(q);
-        const data = snapshot.docs.map((doc, index) => {
+        const data = snapshot.docs.map((doc) => {
           const pantryData = doc.data() as Pantry;
           // Mock coordinates if missing (around St. Louis)
           const lat = pantryData.latitude || 38.6270 + (Math.random() - 0.5) * 0.2;
           const lng = pantryData.longitude || -90.1994 + (Math.random() - 0.5) * 0.2;
-          return { id: doc.id, ...pantryData, latitude: lat, longitude: lng };
+          return { ...pantryData, id: doc.id, latitude: lat, longitude: lng };
         });
         
         // Sort alphabetically by default
@@ -70,6 +72,7 @@ export default function Pantries() {
         setPantries(data);
       } catch (error) {
         console.error('Error fetching pantries:', error);
+        setFetchError('Unable to load partner agencies. Please check your connection and try again.');
       } finally {
         setLoading(false);
       }
@@ -237,8 +240,18 @@ export default function Pantries() {
         </div>
       )}
 
-      {loading ? (
-        <div className="text-center py-12 text-stone-500">Loading agencies...</div>
+      {fetchError ? (
+        <div className="text-center py-12 bg-white rounded-2xl border border-rose-200">
+          <AlertCircle className="w-12 h-12 text-rose-400 mx-auto mb-3" />
+          <h3 className="text-lg font-medium text-stone-800">Failed to load agencies</h3>
+          <p className="text-stone-500 mb-4">{fetchError}</p>
+          <button onClick={() => window.location.reload()} className="text-emerald-700 font-medium hover:underline">Try again</button>
+        </div>
+      ) : loading ? (
+        <div className="text-center py-12 text-stone-500">
+          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-emerald-600 mx-auto mb-3"></div>
+          Loading agencies...
+        </div>
       ) : filteredPantries.length === 0 ? (
         <div className="text-center py-12 bg-white rounded-2xl border border-stone-200">
           <AlertCircle className="w-12 h-12 text-stone-400 mx-auto mb-3" />

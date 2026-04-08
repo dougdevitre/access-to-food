@@ -1,5 +1,7 @@
 import React, { useState, useRef } from 'react';
-import { Gift, Heart, Utensils, Camera, CheckCircle2, Calculator, Users, Package, ArrowLeft } from 'lucide-react';
+import { Heart, Utensils, Camera, CheckCircle2, Calculator, Users, Package, ArrowLeft, Loader2 } from 'lucide-react';
+import { collection, addDoc, serverTimestamp } from 'firebase/firestore';
+import { db } from '../firebase';
 
 export default function Donate() {
   const [activeTab, setActiveTab] = useState<'monetary' | 'food'>('monetary');
@@ -10,13 +12,15 @@ export default function Donate() {
 
   const [donationSubmitted, setDonationSubmitted] = useState(false);
   const [foodDonationSubmitted, setFoodDonationSubmitted] = useState(false);
+  const [foodLocation, setFoodLocation] = useState('');
+  const [foodWeight, setFoodWeight] = useState('');
+  const [isSubmittingFood, setIsSubmittingFood] = useState(false);
 
   // Food Drive Calculator State
   const [participants, setParticipants] = useState<number>(100);
   const [itemsPerParticipant, setItemsPerParticipant] = useState<number>(2);
 
   // Impact calculations
-  const mealsProvided = amount * 4;
   const estimatedItems = participants * itemsPerParticipant;
 
   const processFile = (file: File) => {
@@ -174,21 +178,49 @@ export default function Donate() {
                 </button>
               </div>
             )}
-            <form className="space-y-6" onSubmit={(e) => { e.preventDefault(); setFoodDonationSubmitted(true); }} style={{ display: foodDonationSubmitted ? 'none' : undefined }}>
+            <form className="space-y-6" onSubmit={async (e) => {
+              e.preventDefault();
+              setIsSubmittingFood(true);
+              try {
+                await addDoc(collection(db, 'donations'), {
+                  type: 'food',
+                  location: foodLocation,
+                  weightLbs: Number(foodWeight),
+                  status: 'pending',
+                  createdAt: serverTimestamp(),
+                });
+                setFoodDonationSubmitted(true);
+                setFoodLocation('');
+                setFoodWeight('');
+              } catch (err) {
+                console.error('Error saving food donation:', err);
+              } finally {
+                setIsSubmittingFood(false);
+              }
+            }} style={{ display: foodDonationSubmitted ? 'none' : undefined }}>
               <div>
                 <label className="block text-sm font-medium text-stone-700 mb-2">Drop-off Location</label>
-                <select className="w-full border border-stone-200 rounded-xl px-4 py-3 focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:border-transparent bg-stone-50 hover:bg-stone-100 transition-colors cursor-pointer">
+                <select
+                  value={foodLocation}
+                  onChange={(e) => setFoodLocation(e.target.value)}
+                  required
+                  className="w-full border border-stone-200 rounded-xl px-4 py-3 focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:border-transparent bg-stone-50 hover:bg-stone-100 transition-colors cursor-pointer"
+                >
                   <option value="">Select a location...</option>
-                  <option value="1">access-to-food HQ</option>
-                  <option value="2">Partner Agency</option>
+                  <option value="hq">access-to-food HQ</option>
+                  <option value="partner">Partner Agency</option>
                 </select>
               </div>
 
               <div>
                 <label className="block text-sm font-medium text-stone-700 mb-2">Estimated Weight (lbs)</label>
-                <input 
-                  type="number" 
-                  placeholder="e.g. 50" 
+                <input
+                  type="number"
+                  placeholder="e.g. 50"
+                  min="1"
+                  required
+                  value={foodWeight}
+                  onChange={(e) => setFoodWeight(e.target.value)}
                   className="w-full px-4 py-3 border border-stone-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:border-transparent bg-stone-50 hover:bg-stone-100 transition-colors"
                 />
               </div>
@@ -239,9 +271,9 @@ export default function Donate() {
                 />
               </div>
 
-              <button type="submit" className="w-full bg-emerald-700 text-white font-medium py-4 rounded-2xl hover:bg-emerald-800 transition-colors flex items-center justify-center gap-2 mt-8 shadow-sm">
-                <CheckCircle2 className="w-5 h-5" />
-                Submit Donation Record
+              <button type="submit" disabled={isSubmittingFood} className="w-full bg-emerald-700 text-white font-medium py-4 rounded-2xl hover:bg-emerald-800 transition-colors flex items-center justify-center gap-2 mt-8 shadow-sm disabled:opacity-50">
+                {isSubmittingFood ? <Loader2 className="w-5 h-5 animate-spin" /> : <CheckCircle2 className="w-5 h-5" />}
+                {isSubmittingFood ? 'Submitting...' : 'Submit Donation Record'}
               </button>
             </form>
           </div>

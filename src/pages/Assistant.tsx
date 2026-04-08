@@ -1,5 +1,5 @@
 import React, { useState, useRef, useEffect } from 'react';
-import { GoogleGenAI, Type, FunctionDeclaration, Content, Part } from '@google/genai';
+import { GoogleGenAI, Type, FunctionDeclaration, Content } from '@google/genai';
 import { Send, Bot, User, Loader2 } from 'lucide-react';
 import ReactMarkdown from 'react-markdown';
 import remarkGfm from 'remark-gfm';
