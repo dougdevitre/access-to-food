@@ -3,11 +3,18 @@ import { collection, getDocs, query } from 'firebase/firestore';
 import { db } from '../firebase';
 import { AlertTriangle, Activity, Users, Map as MapIcon, ShieldAlert, TrendingUp, PackageX, CheckCircle2 } from 'lucide-react';
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Legend } from 'recharts';
+import ResourceMap, { MapMarker } from '../components/ResourceMap';
 
 interface Pantry {
   id: string;
   organization_name?: string;
   name?: string;
+  address?: string;
+  city?: string;
+  state?: string;
+  zip?: string;
+  latitude?: number;
+  longitude?: number;
   inventoryStatus?: 'high' | 'medium' | 'low' | 'empty';
 }
 
@@ -45,6 +52,19 @@ export default function CommandCenter() {
     }
     fetchPantries();
   }, []);
+
+  const mapMarkers: MapMarker[] = useMemo(() => {
+    return pantries
+      .filter(p => p.latitude && p.longitude)
+      .map(p => ({
+        id: p.id,
+        lat: p.latitude!,
+        lng: p.longitude!,
+        title: p.organization_name || p.name || 'Unnamed Pantry',
+        type: 'pantry' as const,
+        details: `Stock: ${p.inventoryStatus || 'unknown'}`
+      }));
+  }, [pantries]);
 
   const criticalPantries = useMemo(() => {
     return pantries.filter(p => p.inventoryStatus === 'empty' || p.inventoryStatus === 'low');
@@ -135,43 +155,11 @@ export default function CommandCenter() {
               <span className="flex items-center gap-1.5"><div className="w-2 h-2 rounded-full bg-rose-500"></div> Empty</span>
             </div>
           </div>
-          <div className="relative w-full h-[300px] bg-stone-50 overflow-hidden">
-            {/* Abstract map background */}
-            <svg className="absolute inset-0 w-full h-full opacity-[0.03] text-stone-900" xmlns="http://www.w3.org/2000/svg">
-              <defs>
-                <pattern id="grid" width="30" height="30" patternUnits="userSpaceOnUse">
-                  <path d="M 30 0 L 0 0 0 30" fill="none" stroke="currentColor" strokeWidth="1"/>
-                </pattern>
-              </defs>
-              <rect width="100%" height="100%" fill="url(#grid)" />
-            </svg>
-            
-            {/* Mock map features */}
-            <div className="absolute top-1/4 left-1/3 w-64 h-64 bg-blue-100/30 rounded-full blur-3xl"></div>
-            <div className="absolute bottom-1/4 right-1/4 w-48 h-48 bg-rose-100/30 rounded-full blur-3xl"></div>
-
+          <div className="w-full h-[300px]">
             {loading ? (
-              <div className="absolute inset-0 flex items-center justify-center text-stone-400">Loading map data...</div>
+              <div className="flex items-center justify-center h-full text-stone-400">Loading map data...</div>
             ) : (
-              pantries.map((p, i) => {
-                // Generate pseudo-random coordinates based on index for the abstract map
-                const top = `${15 + ((i * 37) % 70)}%`;
-                const left = `${10 + ((i * 43) % 80)}%`;
-                const color = p.inventoryStatus === 'empty' ? 'bg-rose-500' : p.inventoryStatus === 'low' ? 'bg-orange-500' : p.inventoryStatus === 'medium' ? 'bg-amber-500' : 'bg-emerald-500';
-                
-                return (
-                  <div 
-                    key={p.id} 
-                    className={`absolute w-3.5 h-3.5 rounded-full ${color} shadow-sm ring-2 ring-white cursor-pointer hover:scale-150 transition-transform`} 
-                    style={{ top, left }} 
-                    title={`${p.organization_name || p.name} - ${p.inventoryStatus || 'unknown'} stock`}
-                  >
-                    {p.inventoryStatus === 'empty' && (
-                      <div className="absolute inset-0 rounded-full bg-rose-500 animate-ping opacity-75"></div>
-                    )}
-                  </div>
-                );
-              })
+              <ResourceMap markers={mapMarkers} userLocation={null} />
             )}
           </div>
         </div>

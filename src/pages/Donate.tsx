@@ -1,5 +1,5 @@
 import React, { useState, useRef } from 'react';
-import { Gift, Heart, Utensils, Camera, CheckCircle2, Calculator, Users, Package } from 'lucide-react';
+import { Gift, Heart, Utensils, Camera, CheckCircle2, Calculator, Users, Package, ArrowLeft } from 'lucide-react';
 
 export default function Donate() {
   const [activeTab, setActiveTab] = useState<'monetary' | 'food'>('monetary');
@@ -7,6 +7,9 @@ export default function Donate() {
   const [photo, setPhoto] = useState<string | null>(null);
   const [isDragging, setIsDragging] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
+
+  const [donationSubmitted, setDonationSubmitted] = useState(false);
+  const [foodDonationSubmitted, setFoodDonationSubmitted] = useState(false);
 
   // Food Drive Calculator State
   const [participants, setParticipants] = useState<number>(100);
@@ -110,10 +113,29 @@ export default function Donate() {
               </div>
             </div>
 
-            <button className="w-full bg-emerald-700 text-white font-medium py-4 rounded-2xl hover:bg-emerald-800 transition-colors flex items-center justify-center gap-2 shadow-sm">
-              <Heart className="w-5 h-5" />
-              Donate ${amount}
-            </button>
+            {donationSubmitted ? (
+              <div className="bg-emerald-50 border border-emerald-200 rounded-2xl p-6 text-center space-y-3 animate-in fade-in duration-300">
+                <CheckCircle2 className="w-10 h-10 text-emerald-600 mx-auto" />
+                <h4 className="font-bold text-emerald-800 text-lg">Thank you for your gift!</h4>
+                <p className="text-emerald-700 text-sm font-medium">
+                  Your ${amount} donation will provide approximately ${(amount * 6).toLocaleString()} in food and services. A confirmation receipt will be sent to your email.
+                </p>
+                <button
+                  onClick={() => setDonationSubmitted(false)}
+                  className="text-emerald-700 text-sm font-medium hover:underline flex items-center gap-1 mx-auto mt-2"
+                >
+                  <ArrowLeft className="w-4 h-4" /> Make another donation
+                </button>
+              </div>
+            ) : (
+              <button
+                onClick={() => setDonationSubmitted(true)}
+                className="w-full bg-emerald-700 text-white font-medium py-4 rounded-2xl hover:bg-emerald-800 transition-colors flex items-center justify-center gap-2 shadow-sm"
+              >
+                <Heart className="w-5 h-5" />
+                Donate ${amount}
+              </button>
+            )}
           </div>
 
           <div className="bg-emerald-50 rounded-3xl p-8 border border-emerald-100 flex flex-col justify-center text-center shadow-[0_2px_8px_rgba(0,0,0,0.04)]">
@@ -137,7 +159,22 @@ export default function Donate() {
               Did you drop off food at a partner pantry or host a food drive? Log it here to track your impact and get a receipt for your records.
             </p>
             
-            <form className="space-y-6" onSubmit={(e) => e.preventDefault()}>
+            {foodDonationSubmitted && (
+              <div className="bg-emerald-50 border border-emerald-200 rounded-2xl p-6 text-center space-y-3 mb-6 animate-in fade-in duration-300">
+                <CheckCircle2 className="w-10 h-10 text-emerald-600 mx-auto" />
+                <h4 className="font-bold text-emerald-800 text-lg">Donation recorded!</h4>
+                <p className="text-emerald-700 text-sm font-medium">
+                  Thank you for your food donation. Your contribution makes a real difference in our community.
+                </p>
+                <button
+                  onClick={() => { setFoodDonationSubmitted(false); setPhoto(null); }}
+                  className="text-emerald-700 text-sm font-medium hover:underline flex items-center gap-1 mx-auto mt-2"
+                >
+                  <ArrowLeft className="w-4 h-4" /> Log another donation
+                </button>
+              </div>
+            )}
+            <form className="space-y-6" onSubmit={(e) => { e.preventDefault(); setFoodDonationSubmitted(true); }} style={{ display: foodDonationSubmitted ? 'none' : undefined }}>
               <div>
                 <label className="block text-sm font-medium text-stone-700 mb-2">Drop-off Location</label>
                 <select className="w-full border border-stone-200 rounded-xl px-4 py-3 focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:border-transparent bg-stone-50 hover:bg-stone-100 transition-colors cursor-pointer">

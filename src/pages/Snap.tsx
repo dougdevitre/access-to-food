@@ -1,10 +1,14 @@
 import React, { useState } from 'react';
-import { FileText, Phone, CheckCircle2, ArrowRight, Calculator, AlertCircle } from 'lucide-react';
+import { FileText, Phone, CheckCircle2, ArrowRight, Calculator, AlertCircle, ArrowLeft } from 'lucide-react';
 
 export default function Snap() {
   const [householdSize, setHouseholdSize] = useState<number>(1);
   const [monthlyIncome, setMonthlyIncome] = useState<number | ''>('');
   const [showResult, setShowResult] = useState(false);
+  const [showCallbackForm, setShowCallbackForm] = useState(false);
+  const [callbackSubmitted, setCallbackSubmitted] = useState(false);
+  const [callbackName, setCallbackName] = useState('');
+  const [callbackPhone, setCallbackPhone] = useState('');
 
   // Simplified 2024 Gross Monthly Income Limits (130% FPL) for demonstration
   const calculateEligibility = () => {
@@ -124,10 +128,68 @@ export default function Snap() {
               Call (314) 292-6262
             </a>
             
-            <button className="flex items-center justify-center gap-2 w-full bg-white text-blue-700 border border-blue-200 font-medium py-4 rounded-xl hover:bg-blue-50 transition-colors shadow-sm">
-              Request a Call Back
-              <ArrowRight className="w-4 h-4" />
-            </button>
+            {callbackSubmitted ? (
+              <div className="bg-emerald-50 border border-emerald-200 rounded-xl p-5 text-center space-y-2 animate-in fade-in duration-300">
+                <CheckCircle2 className="w-8 h-8 text-emerald-600 mx-auto" />
+                <h4 className="font-bold text-emerald-800">Request received!</h4>
+                <p className="text-emerald-700 text-sm font-medium">
+                  Our SNAP team will call you back within 1 business day.
+                </p>
+              </div>
+            ) : showCallbackForm ? (
+              <form
+                className="space-y-4 animate-in fade-in slide-in-from-bottom-2 duration-200"
+                onSubmit={(e) => {
+                  e.preventDefault();
+                  setCallbackSubmitted(true);
+                  setShowCallbackForm(false);
+                }}
+              >
+                <div>
+                  <label className="block text-sm font-medium text-stone-700 mb-1">Your Name</label>
+                  <input
+                    type="text"
+                    required
+                    value={callbackName}
+                    onChange={(e) => setCallbackName(e.target.value)}
+                    placeholder="Full name"
+                    className="w-full px-4 py-3 border border-stone-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent bg-white"
+                  />
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-stone-700 mb-1">Phone Number</label>
+                  <input
+                    type="tel"
+                    required
+                    value={callbackPhone}
+                    onChange={(e) => setCallbackPhone(e.target.value)}
+                    placeholder="(555) 123-4567"
+                    className="w-full px-4 py-3 border border-stone-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent bg-white"
+                  />
+                </div>
+                <button
+                  type="submit"
+                  className="w-full bg-blue-600 text-white font-medium py-3 rounded-xl hover:bg-blue-700 transition-colors shadow-sm"
+                >
+                  Submit Request
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setShowCallbackForm(false)}
+                  className="w-full text-stone-500 text-sm font-medium hover:text-stone-700 flex items-center justify-center gap-1"
+                >
+                  <ArrowLeft className="w-4 h-4" /> Cancel
+                </button>
+              </form>
+            ) : (
+              <button
+                onClick={() => setShowCallbackForm(true)}
+                className="flex items-center justify-center gap-2 w-full bg-white text-blue-700 border border-blue-200 font-medium py-4 rounded-xl hover:bg-blue-50 transition-colors shadow-sm"
+              >
+                Request a Call Back
+                <ArrowRight className="w-4 h-4" />
+              </button>
+            )}
           </div>
         </div>
       </div>

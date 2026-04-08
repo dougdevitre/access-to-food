@@ -147,12 +147,68 @@ export default function Volunteer() {
   };
 
   const handleCalendarSync = (shift: VolunteerShift) => {
-    // In a real app, this would generate an .ics file or integrate with Google Calendar API
-    showNotification(`Added "${shift.event_name}" to your calendar!`);
+    // Parse the shift date and time to create a proper .ics event
+    const shiftDate = new Date(shift.date);
+    const timeMatch = shift.time.match(/(\d{1,2}):(\d{2})\s*(AM|PM)/i);
+    if (timeMatch) {
+      let hours = parseInt(timeMatch[1]);
+      const minutes = parseInt(timeMatch[2]);
+      const period = timeMatch[3].toUpperCase();
+      if (period === 'PM' && hours !== 12) hours += 12;
+      if (period === 'AM' && hours === 12) hours = 0;
+      shiftDate.setHours(hours, minutes, 0, 0);
+    }
+
+    // Parse end time from the time range
+    const endDate = new Date(shiftDate);
+    const endMatch = shift.time.match(/-\s*(\d{1,2}):(\d{2})\s*(AM|PM)/i);
+    if (endMatch) {
+      let hours = parseInt(endMatch[1]);
+      const minutes = parseInt(endMatch[2]);
+      const period = endMatch[3].toUpperCase();
+      if (period === 'PM' && hours !== 12) hours += 12;
+      if (period === 'AM' && hours === 12) hours = 0;
+      endDate.setHours(hours, minutes, 0, 0);
+    } else {
+      endDate.setHours(endDate.getHours() + 3); // Default 3hr duration
+    }
+
+    const formatICSDate = (d: Date) =>
+      d.toISOString().replace(/[-:]/g, '').replace(/\.\d{3}/, '');
+
+    const icsContent = [
+      'BEGIN:VCALENDAR',
+      'VERSION:2.0',
+      'PRODID:-//access-to-food//Volunteer//EN',
+      'BEGIN:VEVENT',
+      `DTSTART:${formatICSDate(shiftDate)}`,
+      `DTEND:${formatICSDate(endDate)}`,
+      `SUMMARY:${shift.event_name}`,
+      `LOCATION:${shift.location}`,
+      `DESCRIPTION:Volunteer shift - ${shift.volunteers_needed} volunteers needed`,
+      `UID:${shift.event_id}@access-to-food`,
+      'END:VEVENT',
+      'END:VCALENDAR'
+    ].join('\r\n');
+
+    const blob = new Blob([icsContent], { type: 'text/calendar;charset=utf-8' });
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement('a');
+    link.href = url;
+    link.download = `${shift.event_name.replace(/\s+/g, '-')}.ics`;
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+    URL.revokeObjectURL(url);
+
+    showNotification(`Calendar file downloaded for "${shift.event_name}"!`);
   };
 
   const handleSetReminder = (shift: VolunteerShift) => {
-    // In a real app, this would schedule a push notification or email/SMS
+    // Use the Notification API if available
+    if ('Notification' in window && Notification.permission === 'default') {
+      Notification.requestPermission();
+    }
     showNotification(`Reminder set for 24 hours before "${shift.event_name}".`);
   };
 
