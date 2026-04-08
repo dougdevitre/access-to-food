@@ -1,0 +1,99 @@
+{
+  "entities": {
+    "User": {
+      "title": "User",
+      "description": "A user of the STL Food Access Assistant (Resident, Volunteer, Donor, Pantry Staff, Admin)",
+      "type": "object",
+      "properties": {
+        "uid": { "type": "string", "description": "Firebase Auth UID" },
+        "email": { "type": "string", "format": "email" },
+        "displayName": { "type": "string" },
+        "role": { "type": "string", "enum": ["resident", "volunteer", "donor", "pantry_staff", "admin"], "description": "User role" },
+        "createdAt": { "type": "string", "format": "date-time" }
+      },
+      "required": ["uid", "email", "role", "createdAt"]
+    },
+    "Pantry": {
+      "title": "Pantry",
+      "description": "A partner food pantry location",
+      "type": "object",
+      "properties": {
+        "name": { "type": "string" },
+        "address": { "type": "string" },
+        "latitude": { "type": "number" },
+        "longitude": { "type": "number" },
+        "phone": { "type": "string" },
+        "hours": { "type": "string" },
+        "inventoryStatus": { "type": "string", "enum": ["high", "medium", "low", "empty"] },
+        "lastUpdated": { "type": "string", "format": "date-time" }
+      },
+      "required": ["name", "address", "latitude", "longitude", "inventoryStatus"]
+    },
+    "Event": {
+      "title": "Distribution Event",
+      "description": "A food distribution event",
+      "type": "object",
+      "properties": {
+        "title": { "type": "string" },
+        "description": { "type": "string" },
+        "date": { "type": "string", "format": "date-time" },
+        "location": { "type": "string" },
+        "latitude": { "type": "number" },
+        "longitude": { "type": "number" },
+        "type": { "type": "string", "enum": ["mobile_market", "pop_up", "drive_thru"] },
+        "createdBy": { "type": "string", "description": "UID of the admin/staff who created it" }
+      },
+      "required": ["title", "date", "location", "type", "createdBy"]
+    },
+    "VolunteerShift": {
+      "title": "Volunteer Shift",
+      "description": "A shift that a volunteer has signed up for",
+      "type": "object",
+      "properties": {
+        "eventId": { "type": "string" },
+        "userId": { "type": "string" },
+        "date": { "type": "string", "format": "date-time" },
+        "status": { "type": "string", "enum": ["scheduled", "completed", "cancelled"] },
+        "hoursLogged": { "type": "number" },
+        "photoUrl": { "type": "string", "description": "URL to photo proof of hours" }
+      },
+      "required": ["eventId", "userId", "date", "status"]
+    },
+    "Donation": {
+      "title": "Donation",
+      "description": "Record of a donation",
+      "type": "object",
+      "properties": {
+        "userId": { "type": "string" },
+        "type": { "type": "string", "enum": ["food", "monetary"] },
+        "amount": { "type": "number", "description": "Dollar amount or lbs of food" },
+        "date": { "type": "string", "format": "date-time" },
+        "receiptUrl": { "type": "string", "description": "URL to receipt photo" },
+        "status": { "type": "string", "enum": ["pending", "verified", "rejected"] }
+      },
+      "required": ["userId", "type", "amount", "date", "status"]
+    }
+  },
+  "firestore": {
+    "/users/{userId}": {
+      "schema": { "$ref": "#/entities/User" },
+      "description": "User profiles"
+    },
+    "/pantries/{pantryId}": {
+      "schema": { "$ref": "#/entities/Pantry" },
+      "description": "Partner pantries"
+    },
+    "/events/{eventId}": {
+      "schema": { "$ref": "#/entities/Event" },
+      "description": "Distribution events"
+    },
+    "/volunteerShifts/{shiftId}": {
+      "schema": { "$ref": "#/entities/VolunteerShift" },
+      "description": "Volunteer shift signups and logs"
+    },
+    "/donations/{donationId}": {
+      "schema": { "$ref": "#/entities/Donation" },
+      "description": "Donation records"
+    }
+  }
+}

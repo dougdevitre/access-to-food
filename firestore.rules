@@ -1,0 +1,202 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+    // ===============================================================
+    // Assumed Data Model
+    // ===============================================================
+    // Collection: users
+    // Document ID: {userId}
+    // Fields:
+    //   - uid: string (required) - Firebase Auth UID
+    //   - email: string (required) - User email
+    //   - displayName: string (optional) - User display name
+    //   - role: string (required) - 'resident', 'volunteer', 'donor', 'pantry_staff', 'admin'
+    //   - createdAt: timestamp (required) - Creation time
+    //
+    // Collection: pantries
+    // Document ID: {pantryId}
+    // Fields:
+    //   - name: string (required)
+    //   - address: string (required)
+    //   - latitude: number (required)
+    //   - longitude: number (required)
+    //   - phone: string (optional)
+    //   - hours: string (optional)
+    //   - inventoryStatus: string (required) - 'high', 'medium', 'low', 'empty'
+    //   - lastUpdated: timestamp (optional)
+    //
+    // Collection: events
+    // Document ID: {eventId}
+    // Fields:
+    //   - title: string (required)
+    //   - description: string (optional)
+    //   - date: timestamp (required)
+    //   - location: string (required)
+    //   - latitude: number (optional)
+    //   - longitude: number (optional)
+    //   - type: string (required) - 'mobile_market', 'pop_up', 'drive_thru'
+    //   - createdBy: string (required) - UID of creator
+    //
+    // Collection: volunteerShifts
+    // Document ID: {shiftId}
+    // Fields:
+    //   - eventId: string (required)
+    //   - userId: string (required)
+    //   - date: timestamp (required)
+    //   - status: string (required) - 'scheduled', 'completed', 'cancelled'
+    //   - hoursLogged: number (optional)
+    //   - photoUrl: string (optional)
+    //
+    // Collection: donations
+    // Document ID: {donationId}
+    // Fields:
+    //   - userId: string (required)
+    //   - type: string (required) - 'food', 'monetary'
+    //   - amount: number (required)
+    //   - date: timestamp (required)
+    //   - receiptUrl: string (optional)
+    //   - status: string (required) - 'pending', 'verified', 'rejected'
+    // ===============================================================
+
+    // Helper Functions
+    function isAuthenticated() {
+      return request.auth != null;
+    }
+    
+    function isOwner(userId) {
+      return isAuthenticated() && request.auth.uid == userId;
+    }
+    
+    function isDocOwner() {
+      return isAuthenticated() && request.auth.uid == resource.data.uid;
+    }
+    
+    function uidUnchanged() {
+      return !('uid' in request.resource.data) || request.resource.data.uid == request.auth.uid;
+    }
+    
+    function uidNotModified() {
+      return !('uid' in request.resource.data) || request.resource.data.uid == resource.data.uid;
+    }
+    
+    function hasRequiredFields(fields) {
+      return request.resource.data.keys().hasAll(fields);
+    }
+    
+    function hasOnlyAllowedFields(fields) {
+      return request.resource.data.keys().hasOnly(fields);
+    }
+    
+    function isAdmin() {
+      return isAuthenticated() &&
+        (get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role == 'admin' ||
+          (request.auth.token.email == "dougdevitre@gmail.com" && request.auth.token.email_verified == true));
+    }
+    
+    function isPantryStaff() {
+      return isAuthenticated() &&
+        get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role == 'pantry_staff';
+    }
+
+    function isValidUser(data) {
+      return hasOnlyAllowedFields(['uid', 'email', 'displayName', 'role', 'createdAt']) &&
+             data.uid is string && data.uid.size() > 0 && data.uid.size() < 128 &&
+             data.email is string && data.email.size() > 0 && data.email.size() < 256 &&
+             (!('displayName' in data) || (data.displayName is string && data.displayName.size() < 100)) &&
+             data.role in ['resident', 'volunteer', 'donor', 'pantry_staff', 'admin'] &&
+             data.createdAt is timestamp;
+    }
+
+    function isValidPantry(data) {
+      return hasOnlyAllowedFields(['name', 'address', 'latitude', 'longitude', 'phone', 'hours', 'inventoryStatus', 'lastUpdated']) &&
+             data.name is string && data.name.size() > 0 && data.name.size() < 100 &&
+             data.address is string && data.address.size() > 0 && data.address.size() < 200 &&
+             data.latitude is number && data.longitude is number &&
+             (!('phone' in data) || (data.phone is string && data.phone.size() < 20)) &&
+             (!('hours' in data) || (data.hours is string && data.hours.size() < 200)) &&
+             data.inventoryStatus in ['high', 'medium', 'low', 'empty'] &&
+             (!('lastUpdated' in data) || data.lastUpdated is timestamp);
+    }
+
+    function isValidEvent(data) {
+      return hasOnlyAllowedFields(['title', 'description', 'date', 'location', 'latitude', 'longitude', 'type', 'createdBy']) &&
+             data.title is string && data.title.size() > 0 && data.title.size() < 100 &&
+             (!('description' in data) || (data.description is string && data.description.size() < 1000)) &&
+             data.date is timestamp &&
+             data.location is string && data.location.size() > 0 && data.location.size() < 200 &&
+             (!('latitude' in data) || data.latitude is number) &&
+             (!('longitude' in data) || data.longitude is number) &&
+             data.type in ['mobile_market', 'pop_up', 'drive_thru'] &&
+             data.createdBy is string && data.createdBy.size() > 0 && data.createdBy.size() < 128;
+    }
+
+    function isValidVolunteerShift(data) {
+      return hasOnlyAllowedFields(['eventId', 'userId', 'date', 'status', 'hoursLogged', 'photoUrl']) &&
+             data.eventId is string && data.eventId.size() > 0 && data.eventId.size() < 128 &&
+             data.userId is string && data.userId.size() > 0 && data.userId.size() < 128 &&
+             data.date is timestamp &&
+             data.status in ['scheduled', 'completed', 'cancelled'] &&
+             (!('hoursLogged' in data) || (data.hoursLogged is number && data.hoursLogged >= 0 && data.hoursLogged <= 24)) &&
+             (!('photoUrl' in data) || (data.photoUrl is string && data.photoUrl.size() < 500));
+    }
+
+    function isValidDonation(data) {
+      return hasOnlyAllowedFields(['userId', 'type', 'amount', 'date', 'receiptUrl', 'status']) &&
+             data.userId is string && data.userId.size() > 0 && data.userId.size() < 128 &&
+             data.type in ['food', 'monetary'] &&
+             data.amount is number && data.amount > 0 &&
+             data.date is timestamp &&
+             (!('receiptUrl' in data) || (data.receiptUrl is string && data.receiptUrl.size() < 500)) &&
+             data.status in ['pending', 'verified', 'rejected'];
+    }
+
+    match /users/{userId} {
+      allow read: if isOwner(userId) || isAdmin();
+      allow create: if isAuthenticated() && isValidUser(request.resource.data) && 
+                    ((isOwner(userId) && request.resource.data.role == 'resident') || isAdmin()) &&
+                    uidUnchanged();
+      allow update: if isAuthenticated() && isValidUser(request.resource.data) && 
+                    ((isOwner(userId) && request.resource.data.role == resource.data.role) || isAdmin()) &&
+                    uidNotModified();
+      allow delete: if isAdmin();
+    }
+
+    match /pantries/{pantryId} {
+      allow read: if true;
+      allow create: if (isAdmin() || isPantryStaff()) && isValidPantry(request.resource.data);
+      allow update: if (isAdmin() || isPantryStaff()) && isValidPantry(request.resource.data);
+      allow delete: if isAdmin();
+    }
+
+    match /events/{eventId} {
+      allow read: if true;
+      allow create: if (isAdmin() || isPantryStaff()) && isValidEvent(request.resource.data) &&
+                    request.resource.data.createdBy == request.auth.uid;
+      allow update: if (isAdmin() || isPantryStaff()) && isValidEvent(request.resource.data) &&
+                    request.resource.data.createdBy == resource.data.createdBy;
+      allow delete: if isAdmin();
+    }
+
+    match /volunteerShifts/{shiftId} {
+      allow read: if isAuthenticated() && (request.auth.uid == resource.data.userId || isAdmin() || isPantryStaff());
+      allow create: if isAuthenticated() && isValidVolunteerShift(request.resource.data) &&
+                    request.resource.data.userId == request.auth.uid;
+      allow update: if isAuthenticated() && isValidVolunteerShift(request.resource.data) &&
+                    (request.auth.uid == resource.data.userId || isAdmin() || isPantryStaff()) &&
+                    request.resource.data.userId == resource.data.userId;
+      allow delete: if isAdmin();
+    }
+
+    match /donations/{donationId} {
+      allow read: if isAuthenticated() && (request.auth.uid == resource.data.userId || isAdmin());
+      allow create: if isAuthenticated() && isValidDonation(request.resource.data) &&
+                    request.resource.data.userId == request.auth.uid &&
+                    request.resource.data.status == 'pending';
+      allow update: if isAuthenticated() && isValidDonation(request.resource.data) &&
+                    (request.auth.uid == resource.data.userId || isAdmin()) &&
+                    request.resource.data.userId == resource.data.userId &&
+                    (isAdmin() || request.resource.data.status == resource.data.status);
+      allow delete: if isAdmin();
+    }
+  }
+}

@@ -1,0 +1,5 @@
+{
+  "name": "access-to-food",
+  "description": "Part of the access-to series. A community platform connecting people with food resources, pantries, and volunteer opportunities.",
+  "requestFramePermissions": ["camera", "geolocation"]
+}
