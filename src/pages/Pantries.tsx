@@ -1,7 +1,7 @@
 import { useState, useEffect, useMemo } from 'react';
 import { collection, getDocs, query } from 'firebase/firestore';
 import { db } from '../firebase';
-import { MapPin, Clock, Phone, AlertCircle, Search, Info, Navigation, List, Map as MapIcon } from 'lucide-react';
+import { MapPin, Clock, Phone, AlertCircle, Search, Info, Navigation, List, Map as MapIcon, ChevronDown, ChevronUp } from 'lucide-react';
 import ResourceMap, { MapMarker } from '../components/ResourceMap';
 
 interface Pantry {
@@ -45,6 +45,7 @@ export default function Pantries() {
   const [isLocating, setIsLocating] = useState(false);
   const [locationError, setLocationError] = useState<string | null>(null);
   const [viewMode, setViewMode] = useState<'list' | 'map'>('list');
+  const [expandedPantry, setExpandedPantry] = useState<string | null>(null);
 
   useEffect(() => {
     async function fetchPantries() {
@@ -302,8 +303,45 @@ export default function Pantries() {
                   )}
                 </div>
                 
+                {expandedPantry === pantry.id && (
+                  <div className="mt-4 p-4 bg-stone-50 rounded-2xl border border-stone-100 space-y-3 text-sm text-stone-600 animate-in fade-in slide-in-from-top-2 duration-200">
+                    {pantry.services && (
+                      <div>
+                        <span className="font-semibold text-stone-700 block mb-1">Services</span>
+                        <p>{pantry.services}</p>
+                      </div>
+                    )}
+                    {displayHours && (
+                      <div>
+                        <span className="font-semibold text-stone-700 block mb-1">Distribution Hours</span>
+                        <p className="whitespace-pre-wrap">{displayHours}</p>
+                      </div>
+                    )}
+                    {pantry.county && (
+                      <div>
+                        <span className="font-semibold text-stone-700 block mb-1">County</span>
+                        <p>{pantry.county}</p>
+                      </div>
+                    )}
+                    {pantry.phone && (
+                      <div>
+                        <span className="font-semibold text-stone-700 block mb-1">Phone</span>
+                        <a href={`tel:${pantry.phone.replace(/[^0-9]/g, '')}`} className="text-emerald-700 font-medium hover:underline">{pantry.phone}</a>
+                      </div>
+                    )}
+                    {pantry.inventoryStatus && (
+                      <div>
+                        <span className="font-semibold text-stone-700 block mb-1">Inventory Status</span>
+                        <span className={`text-xs font-bold uppercase tracking-wider px-2.5 py-1 rounded-lg border ${getStatusColor(pantry.inventoryStatus)}`}>
+                          {pantry.inventoryStatus}
+                        </span>
+                      </div>
+                    )}
+                  </div>
+                )}
+
                 <div className="mt-6 pt-5 border-t border-stone-100 flex gap-3 shrink-0">
-                  <a 
+                  <a
                     href={`https://maps.google.com/?q=${encodeURIComponent(fullAddress)}`}
                     target="_blank"
                     rel="noopener noreferrer"
@@ -311,8 +349,12 @@ export default function Pantries() {
                   >
                     Get Directions
                   </a>
-                  <button className="flex-1 bg-stone-50 text-stone-700 font-medium py-2.5 rounded-xl hover:bg-stone-100 transition-colors">
-                    Details
+                  <button
+                    onClick={() => setExpandedPantry(expandedPantry === pantry.id ? null : pantry.id)}
+                    className="flex-1 bg-stone-50 text-stone-700 font-medium py-2.5 rounded-xl hover:bg-stone-100 transition-colors flex items-center justify-center gap-1.5"
+                  >
+                    {expandedPantry === pantry.id ? 'Less' : 'Details'}
+                    {expandedPantry === pantry.id ? <ChevronUp className="w-4 h-4" /> : <ChevronDown className="w-4 h-4" />}
                   </button>
                 </div>
               </div>

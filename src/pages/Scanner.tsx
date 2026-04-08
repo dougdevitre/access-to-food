@@ -1,6 +1,8 @@
 import React, { useState, useRef } from 'react';
-import { Camera, Upload, Loader2, CheckCircle2, AlertCircle, PackageSearch, AlertTriangle, Info } from 'lucide-react';
+import { Camera, Upload, Loader2, CheckCircle2, AlertCircle, PackageSearch, AlertTriangle, Info, Save } from 'lucide-react';
 import { GoogleGenAI, Type } from '@google/genai';
+import { collection, addDoc, serverTimestamp } from 'firebase/firestore';
+import { db } from '../firebase';
 
 interface InventoryItem {
   category: string;
@@ -20,6 +22,8 @@ export default function Scanner() {
   const [error, setError] = useState<string | null>(null);
   
   const [isDragging, setIsDragging] = useState(false);
+  const [isSaving, setIsSaving] = useState(false);
+  const [saveSuccess, setSaveSuccess] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   const processFile = (file: File) => {
@@ -37,6 +41,7 @@ export default function Scanner() {
       
       setResults(null);
       setError(null);
+      setSaveSuccess(false);
     };
     reader.readAsDataURL(file);
   };
@@ -311,9 +316,47 @@ export default function Scanner() {
                 )}
                 
                 <div className="pt-6 mt-6 border-t border-stone-100">
-                  <button className="w-full bg-stone-100 text-stone-700 font-semibold py-4 rounded-2xl hover:bg-stone-200 transition-colors shadow-sm">
-                    Save to Database
-                  </button>
+                  {saveSuccess ? (
+                    <div className="bg-emerald-50 border border-emerald-200 rounded-2xl p-4 text-center flex items-center justify-center gap-2 animate-in fade-in duration-300">
+                      <CheckCircle2 className="w-5 h-5 text-emerald-600" />
+                      <span className="font-semibold text-emerald-800">Saved to inventory database</span>
+                    </div>
+                  ) : (
+                    <button
+                      onClick={async () => {
+                        if (!results) return;
+                        setIsSaving(true);
+                        try {
+                          await addDoc(collection(db, 'inventory_scans'), {
+                            items: results,
+                            scannedAt: serverTimestamp(),
+                            totalCategories: results.length,
+                            criticalCount: results.filter(r => r.criticalShortage).length,
+                          });
+                          setSaveSuccess(true);
+                        } catch (err) {
+                          console.error('Error saving scan:', err);
+                          setError('Failed to save results. Please try again.');
+                        } finally {
+                          setIsSaving(false);
+                        }
+                      }}
+                      disabled={isSaving}
+                      className="w-full bg-stone-100 text-stone-700 font-semibold py-4 rounded-2xl hover:bg-stone-200 transition-colors shadow-sm flex items-center justify-center gap-2 disabled:opacity-50"
+                    >
+                      {isSaving ? (
+                        <>
+                          <Loader2 className="w-5 h-5 animate-spin" />
+                          Saving...
+                        </>
+                      ) : (
+                        <>
+                          <Save className="w-5 h-5" />
+                          Save to Database
+                        </>
+                      )}
+                    </button>
+                  )}
                 </div>
               </div>
             )}
