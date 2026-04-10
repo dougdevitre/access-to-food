@@ -1,6 +1,7 @@
 import { Suspense, lazy } from 'react';
 import { HashRouter, Routes, Route } from 'react-router-dom';
 import { AuthProvider } from './contexts/AuthContext';
+import ErrorBoundary from './components/ErrorBoundary';
 import Layout from './components/Layout';
 import ProtectedRoute from './components/ProtectedRoute';
 
@@ -20,13 +21,15 @@ const Login = lazy(() => import('./pages/Login'));
 
 // Loading fallback
 const PageLoader = () => (
-  <div className="flex items-center justify-center min-h-[50vh]">
+  <div className="flex items-center justify-center min-h-[50vh]" role="status" aria-label="Loading page">
     <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-emerald-600"></div>
+    <span className="sr-only">Loading...</span>
   </div>
 );
 
 export default function App() {
   return (
+    <ErrorBoundary>
     <AuthProvider>
       <HashRouter>
         <Suspense fallback={<PageLoader />}>
@@ -57,5 +60,6 @@ export default function App() {
         </Suspense>
       </HashRouter>
     </AuthProvider>
+    </ErrorBoundary>
   );
 }

@@ -188,7 +188,7 @@ export default function Assistant() {
         </div>
       </div>
 
-      <div className="flex-1 overflow-y-auto p-6 space-y-6 bg-stone-50">
+      <div className="flex-1 overflow-y-auto p-6 space-y-6 bg-stone-50" aria-live="polite" aria-label="Chat messages">
         {!API_KEY_CONFIGURED && (
           <div className="bg-amber-50 border border-amber-200 rounded-2xl p-5 flex items-start gap-3">
             <AlertTriangle className="w-5 h-5 text-amber-600 shrink-0 mt-0.5" />

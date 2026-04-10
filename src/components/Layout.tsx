@@ -45,15 +45,22 @@ export default function Layout() {
 
   return (
     <div className="flex flex-col min-h-screen bg-stone-50 text-stone-900">
+      {/* Skip to content link for keyboard/screen reader users */}
+      <a href="#main" className="sr-only focus:not-sr-only focus:absolute focus:top-2 focus:left-2 focus:z-50 focus:bg-emerald-700 focus:text-white focus:px-4 focus:py-2 focus:rounded-xl focus:text-sm focus:font-medium">
+        Skip to main content
+      </a>
+
       {/* Header */}
-      <header className="bg-white border-b border-stone-200 text-stone-800 sticky top-0 z-30">
+      <header className="bg-white border-b border-stone-200 text-stone-800 sticky top-0 z-30" role="banner">
         <div className="flex justify-between items-center px-4 py-4 max-w-7xl mx-auto w-full">
           <div className="flex items-center gap-3 md:gap-4">
             {/* Mobile Menu Toggle */}
-            <button 
+            <button
               onClick={() => setIsMobileMenuOpen(true)}
               className="md:hidden p-2 hover:bg-stone-100 rounded-xl transition-colors text-stone-600"
               aria-label="Open menu"
+              aria-expanded={isMobileMenuOpen}
+              aria-controls="mobile-menu"
             >
               <Menu className="w-6 h-6" />
             </button>
@@ -102,7 +109,7 @@ export default function Layout() {
       
       {/* Mobile Hamburger Menu Overlay */}
       {isMobileMenuOpen && (
-        <div className="md:hidden fixed inset-0 z-50 flex">
+        <div id="mobile-menu" role="dialog" aria-modal="true" aria-label="Navigation menu" className="md:hidden fixed inset-0 z-50 flex">
           {/* Backdrop */}
           <div 
             className="fixed inset-0 bg-black/50 transition-opacity" 
@@ -185,7 +192,7 @@ export default function Layout() {
           </div>
         </nav>
 
-        <main className="flex-1 w-full p-4 md:p-8 lg:p-10 pb-12 overflow-x-hidden">
+        <main id="main" className="flex-1 w-full p-4 md:p-8 lg:p-10 pb-12 overflow-x-hidden">
           <div className="w-full max-w-7xl">
             <Outlet />
           </div>
