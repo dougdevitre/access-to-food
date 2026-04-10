@@ -4,13 +4,15 @@ import { collection, getDocs, query, addDoc, deleteDoc, doc, where, serverTimest
 import { ref, uploadBytes, getDownloadURL } from 'firebase/storage';
 import { db, storage } from '../firebase';
 import ResourceMap, { MapMarker } from '../components/ResourceMap';
+import { useAuth } from '../contexts/AuthContext';
 
-const ANONYMOUS_ID_KEY = 'access-to-food-anon-id';
-function getAnonymousId(): string {
-  let id = localStorage.getItem(ANONYMOUS_ID_KEY);
+function getUserId(authUid?: string): string {
+  if (authUid) return authUid;
+  const key = 'access-to-food-anon-id';
+  let id = localStorage.getItem(key);
   if (!id) {
     id = 'anon_' + crypto.randomUUID();
-    localStorage.setItem(ANONYMOUS_ID_KEY, id);
+    localStorage.setItem(key, id);
   }
   return id;
 }
@@ -41,6 +43,8 @@ function calculateDistance(lat1: number, lon1: number, lat2: number, lon2: numbe
 }
 
 export default function Volunteer() {
+  const { user } = useAuth();
+  const currentUserId = getUserId(user?.uid);
   const [activeTab, setActiveTab] = useState<'search' | 'upcoming' | 'log'>('search');
   const [viewMode, setViewMode] = useState<'list' | 'map'>('list');
   const [photo, setPhoto] = useState<string | null>(null);
@@ -98,7 +102,7 @@ export default function Volunteer() {
   useEffect(() => {
     async function fetchMySignups() {
       try {
-        const userId = getAnonymousId();
+        const userId = currentUserId;
         const q = query(collection(db, 'volunteerShifts'), where('userId', '==', userId));
         const snapshot = await getDocs(q);
         const ids: string[] = [];
@@ -166,7 +170,7 @@ export default function Volunteer() {
     if (myShiftIds.includes(eventId) || isSigningUp) return;
     setIsSigningUp(eventId);
     try {
-      const userId = getAnonymousId();
+      const userId = currentUserId;
       const shift = allShifts.find(s => s.event_id === eventId);
       const docRef = await addDoc(collection(db, 'volunteerShifts'), {
         eventId,
@@ -558,13 +562,13 @@ export default function Volunteer() {
             try {
               let photoUrl: string | undefined;
               if (photoFile) {
-                const storageRef = ref(storage, `volunteer-photos/${getAnonymousId()}/${Date.now()}-${photoFile.name}`);
+                const storageRef = ref(storage, `volunteer-photos/${currentUserId}/${Date.now()}-${photoFile.name}`);
                 await uploadBytes(storageRef, photoFile);
                 photoUrl = await getDownloadURL(storageRef);
               }
               await addDoc(collection(db, 'volunteerShifts'), {
                 eventId,
-                userId: getAnonymousId(),
+                userId: currentUserId,
                 date: new Date().toISOString(),
                 status: 'completed',
                 hoursLogged: hours,

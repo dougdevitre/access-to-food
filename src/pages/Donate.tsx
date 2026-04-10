@@ -3,18 +3,22 @@ import { Gift, Heart, Utensils, Camera, CheckCircle2, Calculator, Users, Package
 import { collection, addDoc, serverTimestamp } from 'firebase/firestore';
 import { ref, uploadBytes, getDownloadURL } from 'firebase/storage';
 import { db, storage } from '../firebase';
+import { useAuth } from '../contexts/AuthContext';
 
-const ANONYMOUS_ID_KEY = 'access-to-food-anon-id';
-function getAnonymousId(): string {
-  let id = localStorage.getItem(ANONYMOUS_ID_KEY);
+function getUserId(authUid?: string): string {
+  if (authUid) return authUid;
+  const key = 'access-to-food-anon-id';
+  let id = localStorage.getItem(key);
   if (!id) {
     id = 'anon_' + crypto.randomUUID();
-    localStorage.setItem(ANONYMOUS_ID_KEY, id);
+    localStorage.setItem(key, id);
   }
   return id;
 }
 
 export default function Donate() {
+  const { user } = useAuth();
+  const currentUserId = getUserId(user?.uid);
   const [activeTab, setActiveTab] = useState<'monetary' | 'food'>('monetary');
   const [amount, setAmount] = useState<number>(25);
   const [photo, setPhoto] = useState<string | null>(null);
@@ -149,7 +153,7 @@ export default function Donate() {
                   setIsSubmitting(true);
                   try {
                     await addDoc(collection(db, 'donations'), {
-                      userId: getAnonymousId(),
+                      userId: currentUserId,
                       type: 'monetary',
                       amount,
                       date: new Date().toISOString(),
@@ -220,12 +224,12 @@ export default function Donate() {
                 const weightInput = form.querySelector('input[type="number"]') as HTMLInputElement;
                 let receiptUrl: string | undefined;
                 if (photoFile) {
-                  const storageRef = ref(storage, `donation-receipts/${getAnonymousId()}/${Date.now()}-${photoFile.name}`);
+                  const storageRef = ref(storage, `donation-receipts/${currentUserId}/${Date.now()}-${photoFile.name}`);
                   await uploadBytes(storageRef, photoFile);
                   receiptUrl = await getDownloadURL(storageRef);
                 }
                 await addDoc(collection(db, 'donations'), {
-                  userId: getAnonymousId(),
+                  userId: currentUserId,
                   type: 'food',
                   amount: parseFloat(weightInput?.value || '0'),
                   location: locationSelect?.value || '',

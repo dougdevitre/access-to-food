@@ -1,10 +1,12 @@
 import { useState, useEffect } from 'react';
 import { Outlet, Link, useLocation } from 'react-router-dom';
-import { Home, MapPin, Calendar, HeartHandshake, Gift, FileText, Info, Bot, Camera, Activity, Menu, X } from 'lucide-react';
+import { Home, MapPin, Calendar, HeartHandshake, Gift, FileText, Info, Bot, Camera, Activity, Menu, X, LogIn, LogOut, User } from 'lucide-react';
 import { clsx } from 'clsx';
+import { useAuth } from '../contexts/AuthContext';
 
 export default function Layout() {
   const location = useLocation();
+  const { user, profile, logout } = useAuth();
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const [isDesktopSidebarOpen, setIsDesktopSidebarOpen] = useState(true);
 
@@ -25,18 +27,20 @@ export default function Layout() {
     };
   }, [isMobileMenuOpen]);
 
+  const isStaff = profile?.role === 'pantry_staff' || profile?.role === 'admin';
+
   const navItems = [
     { path: '/', label: 'Home', icon: Home },
     { path: '/need-food', label: 'Need Food Now', icon: MapPin },
     { path: '/pantries', label: 'Partner Agencies', icon: MapPin },
     { path: '/events', label: 'MetroMarket & Events', icon: Calendar },
     { path: '/assistant', label: 'AI Assistant', icon: Bot },
-    { path: '/scanner', label: 'Scanner', icon: Camera },
+    ...(isStaff ? [{ path: '/scanner', label: 'Scanner', icon: Camera }] : []),
     { path: '/volunteer', label: 'Volunteer', icon: HeartHandshake },
     { path: '/donate', label: 'Donate', icon: Gift },
     { path: '/snap', label: 'SNAP Help', icon: FileText },
     { path: '/resources', label: 'Nutrition & Resources', icon: Info },
-    { path: '/dashboard', label: 'Command Center', icon: Activity },
+    ...(isStaff ? [{ path: '/dashboard', label: 'Command Center', icon: Activity }] : []),
   ];
 
   return (
@@ -66,8 +70,32 @@ export default function Layout() {
               access-to-food
             </Link>
           </div>
-          <div className="hidden sm:block text-xs font-bold tracking-wider uppercase text-stone-500 bg-stone-100 px-4 py-2 rounded-full">
-            Part of the access-to series
+          <div className="flex items-center gap-3">
+            <div className="hidden sm:block text-xs font-bold tracking-wider uppercase text-stone-500 bg-stone-100 px-4 py-2 rounded-full">
+              Part of the access-to series
+            </div>
+            {user ? (
+              <div className="flex items-center gap-2">
+                <span className="hidden md:block text-sm font-medium text-stone-600 truncate max-w-[120px]">
+                  {profile?.displayName || user.email}
+                </span>
+                <button
+                  onClick={() => logout()}
+                  className="p-2 hover:bg-stone-100 rounded-xl transition-colors text-stone-500 hover:text-stone-700"
+                  title="Sign out"
+                >
+                  <LogOut className="w-5 h-5" />
+                </button>
+              </div>
+            ) : (
+              <Link
+                to="/login"
+                className="flex items-center gap-2 px-4 py-2 bg-emerald-700 text-white text-sm font-medium rounded-xl hover:bg-emerald-800 transition-colors"
+              >
+                <LogIn className="w-4 h-4" />
+                <span className="hidden sm:inline">Sign In</span>
+              </Link>
+            )}
           </div>
         </div>
       </header>
