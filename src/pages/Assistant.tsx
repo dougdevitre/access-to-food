@@ -1,11 +1,13 @@
 import React, { useState, useRef, useEffect } from 'react';
 import Anthropic from '@anthropic-ai/sdk';
-import { Send, Bot, User, Loader2 } from 'lucide-react';
+import { Send, Bot, User, Loader2, AlertTriangle } from 'lucide-react';
 import ReactMarkdown from 'react-markdown';
 import remarkGfm from 'remark-gfm';
 import rehypeRaw from 'rehype-raw';
 import { collection, getDocs, query } from 'firebase/firestore';
 import { db } from '../firebase';
+
+const API_KEY_CONFIGURED = !!process.env.ANTHROPIC_API_KEY;
 
 const SYSTEM_PROMPT = `You are a helpful AI assistant for access-to-food, part of the access-to series.
 
@@ -187,6 +189,15 @@ export default function Assistant() {
       </div>
 
       <div className="flex-1 overflow-y-auto p-6 space-y-6 bg-stone-50">
+        {!API_KEY_CONFIGURED && (
+          <div className="bg-amber-50 border border-amber-200 rounded-2xl p-5 flex items-start gap-3">
+            <AlertTriangle className="w-5 h-5 text-amber-600 shrink-0 mt-0.5" />
+            <div>
+              <p className="font-semibold text-amber-800">AI Assistant Unavailable</p>
+              <p className="text-sm text-amber-700 mt-1">The Anthropic API key is not configured. The chat assistant requires a valid API key to function. Please set the <code className="bg-amber-100 px-1.5 py-0.5 rounded text-xs font-mono">ANTHROPIC_API_KEY</code> environment variable.</p>
+            </div>
+          </div>
+        )}
         {messages.map((msg, idx) => (
           <div key={idx} className={`flex gap-4 ${msg.role === 'user' ? 'justify-end' : 'justify-start'}`}>
             {msg.role === 'assistant' && (
@@ -255,13 +266,13 @@ export default function Assistant() {
             type="text"
             value={input}
             onChange={(e) => setInput(e.target.value)}
-            placeholder="Type your message here..."
+            placeholder={API_KEY_CONFIGURED ? "Type your message here..." : "AI assistant is not configured"}
             className="flex-1 bg-stone-50 border border-stone-200 rounded-full pl-6 pr-16 py-4 focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:border-transparent shadow-sm font-medium text-stone-800 placeholder:text-stone-400"
-            disabled={isLoading}
+            disabled={isLoading || !API_KEY_CONFIGURED}
           />
           <button
             type="submit"
-            disabled={!input.trim() || isLoading}
+            disabled={!input.trim() || isLoading || !API_KEY_CONFIGURED}
             className="absolute right-2.5 top-1/2 -translate-y-1/2 w-11 h-11 rounded-full bg-emerald-600 text-white flex items-center justify-center hover:bg-emerald-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors shadow-sm"
           >
             <Send className="w-5 h-5 ml-0.5" />

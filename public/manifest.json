@@ -1,0 +1,24 @@
+{
+  "name": "access-to-food",
+  "short_name": "access-to-food",
+  "description": "A community platform connecting people with food resources, pantries, and volunteer opportunities in St. Louis.",
+  "start_url": "/access-to-food/",
+  "scope": "/access-to-food/",
+  "display": "standalone",
+  "background_color": "#fafaf9",
+  "theme_color": "#047857",
+  "icons": [
+    {
+      "src": "/access-to-food/icons/icon-192.svg",
+      "sizes": "192x192",
+      "type": "image/svg+xml",
+      "purpose": "any maskable"
+    },
+    {
+      "src": "/access-to-food/icons/icon-512.svg",
+      "sizes": "512x512",
+      "type": "image/svg+xml",
+      "purpose": "any maskable"
+    }
+  ]
+}

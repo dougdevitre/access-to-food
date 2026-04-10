@@ -4,6 +4,8 @@ import Anthropic from '@anthropic-ai/sdk';
 import { collection, addDoc, serverTimestamp } from 'firebase/firestore';
 import { db } from '../firebase';
 
+const API_KEY_CONFIGURED = !!process.env.ANTHROPIC_API_KEY;
+
 interface InventoryItem {
   category: string;
   stockLevel: 'High' | 'Medium' | 'Low' | 'Empty';
@@ -156,6 +158,16 @@ Do not include any text outside the JSON array.`,
         <p className="text-stone-600 font-medium">Scan pantry shelves to automatically detect food categories and estimate stock levels.</p>
       </div>
 
+      {!API_KEY_CONFIGURED && (
+        <div className="bg-amber-50 border border-amber-200 rounded-2xl p-5 flex items-start gap-3">
+          <AlertTriangle className="w-5 h-5 text-amber-600 shrink-0 mt-0.5" />
+          <div>
+            <p className="font-semibold text-amber-800">Scanner Unavailable</p>
+            <p className="text-sm text-amber-700 mt-1">The Anthropic API key is not configured. Image analysis requires a valid API key. Please set the <code className="bg-amber-100 px-1.5 py-0.5 rounded text-xs font-mono">ANTHROPIC_API_KEY</code> environment variable.</p>
+          </div>
+        </div>
+      )}
+
       <div className="grid md:grid-cols-2 gap-8">
         <div className="bg-white rounded-3xl p-8 border border-stone-100 shadow-[0_2px_8px_rgba(0,0,0,0.04)] flex flex-col">
           <h3 className="text-xl font-semibold text-stone-800 mb-6 flex items-center gap-3">
@@ -215,7 +227,7 @@ Do not include any text outside the JSON array.`,
 
             <button
               onClick={analyzeImage}
-              disabled={!photo || isAnalyzing}
+              disabled={!photo || isAnalyzing || !API_KEY_CONFIGURED}
               className="w-full bg-emerald-700 text-white font-medium py-4 rounded-2xl hover:bg-emerald-800 transition-colors flex items-center justify-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed mt-auto shadow-sm"
             >
               {isAnalyzing ? (
