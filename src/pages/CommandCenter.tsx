@@ -18,39 +18,93 @@ interface Pantry {
   inventoryStatus?: 'high' | 'medium' | 'low' | 'empty';
 }
 
-const STAFFING_DATA = [
-  { name: 'Mar 20', needed: 15, filled: 12 },
-  { name: 'Mar 22', needed: 8, filled: 8 },
-  { name: 'Mar 25', needed: 20, filled: 5 },
-  { name: 'Mar 28', needed: 5, filled: 2 },
-  { name: 'Apr 02', needed: 10, filled: 1 },
-];
+interface StaffingDataPoint {
+  name: string;
+  needed: number;
+  filled: number;
+}
 
-const RISK_ZONES = [
-  { zip: '63106', neighborhood: 'JeffVanderLou', risk: 92, trend: '+5%' },
-  { zip: '63113', neighborhood: 'The Ville', risk: 88, trend: '+2%' },
-  { zip: '63115', neighborhood: 'Penrose', risk: 85, trend: '-1%' },
-  { zip: '63107', neighborhood: 'Hyde Park', risk: 78, trend: '+8%' },
-];
+interface RiskZone {
+  zip: string;
+  neighborhood: string;
+  risk: number;
+  trend: string;
+}
 
 export default function CommandCenter() {
   const [pantries, setPantries] = useState<Pantry[]>([]);
+  const [staffingData, setStaffingData] = useState<StaffingDataPoint[]>([]);
+  const [riskZones, setRiskZones] = useState<RiskZone[]>([]);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    async function fetchPantries() {
+    async function fetchData() {
       try {
-        const q = query(collection(db, 'pantries'));
-        const snapshot = await getDocs(q);
-        const data = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as Pantry));
-        setPantries(data);
+        // Fetch pantries
+        const pantrySnapshot = await getDocs(query(collection(db, 'pantries')));
+        const pantryData = pantrySnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as Pantry));
+        setPantries(pantryData);
+
+        // Fetch events for staffing data
+        const eventsSnapshot = await getDocs(query(collection(db, 'events')));
+        const shiftsSnapshot = await getDocs(query(collection(db, 'volunteerShifts')));
+
+        // Build staffing chart: for each event, count needed vs filled volunteer slots
+        const shiftsByEvent = new Map<string, number>();
+        shiftsSnapshot.docs.forEach(d => {
+          const data = d.data();
+          if (data.eventId && data.status !== 'cancelled') {
+            shiftsByEvent.set(data.eventId, (shiftsByEvent.get(data.eventId) || 0) + 1);
+          }
+        });
+
+        const staffing: StaffingDataPoint[] = eventsSnapshot.docs
+          .map(d => {
+            const data = d.data();
+            const dateObj = data.date?.toDate ? data.date.toDate() : new Date(data.date);
+            return {
+              name: dateObj.toLocaleDateString('en-US', { month: 'short', day: 'numeric' }),
+              needed: data.volunteers_needed || 10,
+              filled: shiftsByEvent.get(d.id) || 0,
+              dateSort: dateObj.getTime(),
+            };
+          })
+          .sort((a, b) => a.dateSort - b.dateSort)
+          .slice(0, 8)
+          .map(({ dateSort, ...rest }) => rest);
+        setStaffingData(staffing);
+
+        // Compute risk zones from pantry inventory by zip code
+        const zipGroups = new Map<string, { total: number; critical: number; city: string }>();
+        pantryData.forEach(p => {
+          const zip = p.zip || 'Unknown';
+          const city = p.city || zip;
+          const entry = zipGroups.get(zip) || { total: 0, critical: 0, city };
+          entry.total++;
+          if (p.inventoryStatus === 'low' || p.inventoryStatus === 'empty') {
+            entry.critical++;
+          }
+          zipGroups.set(zip, entry);
+        });
+
+        const zones: RiskZone[] = Array.from(zipGroups.entries())
+          .map(([zip, { total, critical, city }]) => ({
+            zip,
+            neighborhood: city,
+            risk: total > 0 ? Math.round((critical / total) * 100) : 0,
+            trend: '--',
+          }))
+          .filter(z => z.risk > 0)
+          .sort((a, b) => b.risk - a.risk)
+          .slice(0, 6);
+        setRiskZones(zones);
       } catch (error) {
-        console.error('Error fetching pantries:', error);
+        console.error('Error fetching dashboard data:', error);
       } finally {
         setLoading(false);
       }
     }
-    fetchPantries();
+    fetchData();
   }, []);
 
   const mapMarkers: MapMarker[] = useMemo(() => {
@@ -71,8 +125,8 @@ export default function CommandCenter() {
   }, [pantries]);
   
   const { totalNeeded, totalFilled, fillRate } = useMemo(() => {
-    const needed = STAFFING_DATA.reduce((acc, curr) => acc + curr.needed, 0);
-    const filled = STAFFING_DATA.reduce((acc, curr) => acc + curr.filled, 0);
+    const needed = staffingData.reduce((acc, curr) => acc + curr.needed, 0);
+    const filled = staffingData.reduce((acc, curr) => acc + curr.filled, 0);
     return {
       totalNeeded: needed,
       totalFilled: filled,
@@ -135,7 +189,7 @@ export default function CommandCenter() {
             </div>
           </div>
           <div>
-            <h3 className="text-4xl font-light text-amber-600 tracking-tight">{RISK_ZONES.length}</h3>
+            <h3 className="text-4xl font-light text-amber-600 tracking-tight">{riskZones.length}</h3>
             <p className="text-sm font-medium text-stone-500 mt-1">High Risk Zones</p>
           </div>
         </div>
@@ -212,7 +266,7 @@ export default function CommandCenter() {
           </div>
           <div className="h-[250px] w-full">
             <ResponsiveContainer width="100%" height="100%">
-              <BarChart data={STAFFING_DATA} margin={{ top: 10, right: 10, left: -20, bottom: 0 }}>
+              <BarChart data={staffingData} margin={{ top: 10, right: 10, left: -20, bottom: 0 }}>
                 <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#f5f5f4" />
                 <XAxis dataKey="name" axisLine={false} tickLine={false} tick={{ fontSize: 12, fill: '#a8a29e' }} dy={10} />
                 <YAxis axisLine={false} tickLine={false} tick={{ fontSize: 12, fill: '#a8a29e' }} />
@@ -237,7 +291,7 @@ export default function CommandCenter() {
             </h2>
           </div>
           <div className="space-y-6">
-            {RISK_ZONES.map((zone) => (
+            {riskZones.map((zone) => (
               <div key={zone.zip}>
                 <div className="flex justify-between items-end mb-2">
                   <div>

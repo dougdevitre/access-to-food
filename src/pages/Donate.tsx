@@ -1,15 +1,30 @@
 import React, { useState, useRef } from 'react';
-import { Gift, Heart, Utensils, Camera, CheckCircle2, Calculator, Users, Package, ArrowLeft } from 'lucide-react';
+import { Gift, Heart, Utensils, Camera, CheckCircle2, Calculator, Users, Package, ArrowLeft, Loader2 } from 'lucide-react';
+import { collection, addDoc, serverTimestamp } from 'firebase/firestore';
+import { ref, uploadBytes, getDownloadURL } from 'firebase/storage';
+import { db, storage } from '../firebase';
+
+const ANONYMOUS_ID_KEY = 'access-to-food-anon-id';
+function getAnonymousId(): string {
+  let id = localStorage.getItem(ANONYMOUS_ID_KEY);
+  if (!id) {
+    id = 'anon_' + crypto.randomUUID();
+    localStorage.setItem(ANONYMOUS_ID_KEY, id);
+  }
+  return id;
+}
 
 export default function Donate() {
   const [activeTab, setActiveTab] = useState<'monetary' | 'food'>('monetary');
   const [amount, setAmount] = useState<number>(25);
   const [photo, setPhoto] = useState<string | null>(null);
+  const [photoFile, setPhotoFile] = useState<File | null>(null);
   const [isDragging, setIsDragging] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   const [donationSubmitted, setDonationSubmitted] = useState(false);
   const [foodDonationSubmitted, setFoodDonationSubmitted] = useState(false);
+  const [isSubmitting, setIsSubmitting] = useState(false);
 
   // Food Drive Calculator State
   const [participants, setParticipants] = useState<number>(100);
@@ -20,6 +35,7 @@ export default function Donate() {
   const estimatedItems = participants * itemsPerParticipant;
 
   const processFile = (file: File) => {
+    setPhotoFile(file);
     const reader = new FileReader();
     reader.onloadend = () => {
       setPhoto(reader.result as string);
@@ -129,11 +145,32 @@ export default function Donate() {
               </div>
             ) : (
               <button
-                onClick={() => setDonationSubmitted(true)}
-                className="w-full bg-emerald-700 text-white font-medium py-4 rounded-2xl hover:bg-emerald-800 transition-colors flex items-center justify-center gap-2 shadow-sm"
+                onClick={async () => {
+                  setIsSubmitting(true);
+                  try {
+                    await addDoc(collection(db, 'donations'), {
+                      userId: getAnonymousId(),
+                      type: 'monetary',
+                      amount,
+                      date: new Date().toISOString(),
+                      status: 'pending',
+                      createdAt: serverTimestamp(),
+                    });
+                    setDonationSubmitted(true);
+                  } catch (error) {
+                    console.error('Error recording donation:', error);
+                  } finally {
+                    setIsSubmitting(false);
+                  }
+                }}
+                disabled={isSubmitting || amount <= 0}
+                className="w-full bg-emerald-700 text-white font-medium py-4 rounded-2xl hover:bg-emerald-800 transition-colors flex items-center justify-center gap-2 shadow-sm disabled:opacity-50"
               >
-                <Heart className="w-5 h-5" />
-                Donate ${amount}
+                {isSubmitting ? (
+                  <><Loader2 className="w-5 h-5 animate-spin" /> Processing...</>
+                ) : (
+                  <><Heart className="w-5 h-5" /> Donate ${amount}</>
+                )}
               </button>
             )}
           </div>
@@ -174,7 +211,36 @@ export default function Donate() {
                 </button>
               </div>
             )}
-            <form className="space-y-6" onSubmit={(e) => { e.preventDefault(); setFoodDonationSubmitted(true); }} style={{ display: foodDonationSubmitted ? 'none' : undefined }}>
+            <form className="space-y-6" onSubmit={async (e) => {
+              e.preventDefault();
+              setIsSubmitting(true);
+              try {
+                const form = e.target as HTMLFormElement;
+                const locationSelect = form.querySelector('select') as HTMLSelectElement;
+                const weightInput = form.querySelector('input[type="number"]') as HTMLInputElement;
+                let receiptUrl: string | undefined;
+                if (photoFile) {
+                  const storageRef = ref(storage, `donation-receipts/${getAnonymousId()}/${Date.now()}-${photoFile.name}`);
+                  await uploadBytes(storageRef, photoFile);
+                  receiptUrl = await getDownloadURL(storageRef);
+                }
+                await addDoc(collection(db, 'donations'), {
+                  userId: getAnonymousId(),
+                  type: 'food',
+                  amount: parseFloat(weightInput?.value || '0'),
+                  location: locationSelect?.value || '',
+                  date: new Date().toISOString(),
+                  status: 'pending',
+                  ...(receiptUrl && { receiptUrl }),
+                  createdAt: serverTimestamp(),
+                });
+                setFoodDonationSubmitted(true);
+              } catch (error) {
+                console.error('Error recording food donation:', error);
+              } finally {
+                setIsSubmitting(false);
+              }
+            }} style={{ display: foodDonationSubmitted ? 'none' : undefined }}>
               <div>
                 <label className="block text-sm font-medium text-stone-700 mb-2">Drop-off Location</label>
                 <select className="w-full border border-stone-200 rounded-xl px-4 py-3 focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:border-transparent bg-stone-50 hover:bg-stone-100 transition-colors cursor-pointer">
@@ -239,9 +305,12 @@ export default function Donate() {
                 />
               </div>
 
-              <button type="submit" className="w-full bg-emerald-700 text-white font-medium py-4 rounded-2xl hover:bg-emerald-800 transition-colors flex items-center justify-center gap-2 mt-8 shadow-sm">
-                <CheckCircle2 className="w-5 h-5" />
-                Submit Donation Record
+              <button type="submit" disabled={isSubmitting} className="w-full bg-emerald-700 text-white font-medium py-4 rounded-2xl hover:bg-emerald-800 transition-colors flex items-center justify-center gap-2 mt-8 shadow-sm disabled:opacity-50">
+                {isSubmitting ? (
+                  <><Loader2 className="w-5 h-5 animate-spin" /> Submitting...</>
+                ) : (
+                  <><CheckCircle2 className="w-5 h-5" /> Submit Donation Record</>
+                )}
               </button>
             </form>
           </div>

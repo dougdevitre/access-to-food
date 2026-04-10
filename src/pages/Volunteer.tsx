@@ -1,6 +1,19 @@
-import React, { useState, useRef, useMemo } from 'react';
-import { Camera, Upload, CheckCircle2, Calendar, Clock, Search, MapPin, Users, Bell, CalendarPlus, ChevronRight, List, Map as MapIcon, Navigation, AlertCircle } from 'lucide-react';
+import React, { useState, useRef, useMemo, useEffect } from 'react';
+import { Camera, Upload, CheckCircle2, Calendar, Clock, Search, MapPin, Users, Bell, CalendarPlus, ChevronRight, List, Map as MapIcon, Navigation, AlertCircle, Loader2 } from 'lucide-react';
+import { collection, getDocs, query, addDoc, deleteDoc, doc, where, serverTimestamp } from 'firebase/firestore';
+import { ref, uploadBytes, getDownloadURL } from 'firebase/storage';
+import { db, storage } from '../firebase';
 import ResourceMap, { MapMarker } from '../components/ResourceMap';
+
+const ANONYMOUS_ID_KEY = 'access-to-food-anon-id';
+function getAnonymousId(): string {
+  let id = localStorage.getItem(ANONYMOUS_ID_KEY);
+  if (!id) {
+    id = 'anon_' + crypto.randomUUID();
+    localStorage.setItem(ANONYMOUS_ID_KEY, id);
+  }
+  return id;
+}
 
 interface VolunteerShift {
   event_id: string;
@@ -27,70 +40,84 @@ function calculateDistance(lat1: number, lon1: number, lat2: number, lon2: numbe
   return R * c;
 }
 
-const MOCK_SHIFTS: VolunteerShift[] = [
-  {
-    event_id: '1',
-    event_name: 'Community Backpack Packing',
-    location: 'access-to-food HQ',
-    date: '2026-03-20',
-    time: '09:00 AM - 12:00 PM',
-    volunteers_needed: 15,
-    latitude: 38.6811,
-    longitude: -90.3601
-  },
-  {
-    event_id: '2',
-    event_name: 'Mobile Market Assistant',
-    location: 'Northside Community Center',
-    date: '2026-03-22',
-    time: '01:00 PM - 04:00 PM',
-    volunteers_needed: 8,
-    latitude: 38.6500,
-    longitude: -90.2000
-  },
-  {
-    event_id: '3',
-    event_name: 'Gleaning - Farm Harvest',
-    location: 'Local Partner Farm',
-    date: '2026-03-25',
-    time: '08:00 AM - 12:00 PM',
-    volunteers_needed: 20,
-    latitude: 38.5500,
-    longitude: -90.3000
-  },
-  {
-    event_id: '4',
-    event_name: 'Teaching Kitchen Prep',
-    location: 'access-to-food HQ',
-    date: '2026-03-28',
-    time: '08:00 AM - 11:00 AM',
-    volunteers_needed: 5,
-    latitude: 38.6811,
-    longitude: -90.3601
-  },
-  {
-    event_id: '5',
-    event_name: 'Emergency Food Sorting',
-    location: 'access-to-food HQ',
-    date: '2026-04-02',
-    time: '04:00 PM - 07:00 PM',
-    volunteers_needed: 10,
-    latitude: 38.6811,
-    longitude: -90.3601
-  }
-];
-
 export default function Volunteer() {
   const [activeTab, setActiveTab] = useState<'search' | 'upcoming' | 'log'>('search');
   const [viewMode, setViewMode] = useState<'list' | 'map'>('list');
   const [photo, setPhoto] = useState<string | null>(null);
+  const [photoFile, setPhotoFile] = useState<File | null>(null);
   const [searchQuery, setSearchQuery] = useState('');
-  const [myShifts, setMyShifts] = useState<string[]>([]);
+  const [myShiftIds, setMyShiftIds] = useState<string[]>([]);
+  const [myShiftDocs, setMyShiftDocs] = useState<Map<string, string>>(new Map()); // eventId -> volunteerShift doc ID
   const [notification, setNotification] = useState<string | null>(null);
   const [userLocation, setUserLocation] = useState<{lat: number, lng: number} | null>(null);
   const [isLocating, setIsLocating] = useState(false);
   const [locationError, setLocationError] = useState<string | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
+
+  const [allShifts, setAllShifts] = useState<VolunteerShift[]>([]);
+  const [loadingShifts, setLoadingShifts] = useState(true);
+  const [isSigningUp, setIsSigningUp] = useState<string | null>(null);
+
+  // Fetch events from Firestore as available shifts
+  useEffect(() => {
+    async function fetchShifts() {
+      try {
+        const snapshot = await getDocs(query(collection(db, 'events')));
+        const events = snapshot.docs.map(d => {
+          const data = d.data();
+          const dateObj = data.date?.toDate ? data.date.toDate() : new Date(data.date);
+          const hours = dateObj.getHours();
+          const endHours = hours + 3;
+          const formatTime = (h: number) => {
+            const period = h >= 12 ? 'PM' : 'AM';
+            const display = h > 12 ? h - 12 : h === 0 ? 12 : h;
+            return `${display}:00 ${period}`;
+          };
+          return {
+            event_id: d.id,
+            event_name: data.title || data.name || 'Volunteer Event',
+            location: data.location || 'TBD',
+            date: dateObj.toISOString().split('T')[0],
+            time: `${formatTime(hours)} - ${formatTime(endHours)}`,
+            volunteers_needed: data.volunteers_needed || 10,
+            latitude: data.latitude || (38.6270 + (Math.random() - 0.5) * 0.1),
+            longitude: data.longitude || (-90.1994 + (Math.random() - 0.5) * 0.1),
+          } as VolunteerShift;
+        });
+        setAllShifts(events);
+      } catch (error) {
+        console.error('Error fetching shifts:', error);
+      } finally {
+        setLoadingShifts(false);
+      }
+    }
+    fetchShifts();
+  }, []);
+
+  // Fetch user's existing signups
+  useEffect(() => {
+    async function fetchMySignups() {
+      try {
+        const userId = getAnonymousId();
+        const q = query(collection(db, 'volunteerShifts'), where('userId', '==', userId));
+        const snapshot = await getDocs(q);
+        const ids: string[] = [];
+        const docMap = new Map<string, string>();
+        snapshot.docs.forEach(d => {
+          const data = d.data();
+          if (data.eventId && data.status !== 'cancelled') {
+            ids.push(data.eventId);
+            docMap.set(data.eventId, d.id);
+          }
+        });
+        setMyShiftIds(ids);
+        setMyShiftDocs(docMap);
+      } catch (error) {
+        console.error('Error fetching signups:', error);
+      }
+    }
+    fetchMySignups();
+  }, []);
 
   const handleGetLocation = () => {
     setIsLocating(true);
@@ -121,6 +148,7 @@ export default function Volunteer() {
   const handlePhotoCapture = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (file) {
+      setPhotoFile(file);
       const reader = new FileReader();
       reader.onloadend = () => {
         setPhoto(reader.result as string);
@@ -134,16 +162,47 @@ export default function Volunteer() {
     setTimeout(() => setNotification(null), 3000);
   };
 
-  const handleSignUp = (eventId: string) => {
-    if (!myShifts.includes(eventId)) {
-      setMyShifts([...myShifts, eventId]);
+  const handleSignUp = async (eventId: string) => {
+    if (myShiftIds.includes(eventId) || isSigningUp) return;
+    setIsSigningUp(eventId);
+    try {
+      const userId = getAnonymousId();
+      const shift = allShifts.find(s => s.event_id === eventId);
+      const docRef = await addDoc(collection(db, 'volunteerShifts'), {
+        eventId,
+        userId,
+        date: shift?.date || new Date().toISOString(),
+        status: 'scheduled',
+        hoursLogged: 0,
+        createdAt: serverTimestamp(),
+      });
+      setMyShiftIds(prev => [...prev, eventId]);
+      setMyShiftDocs(prev => new Map(prev).set(eventId, docRef.id));
       showNotification('Successfully signed up for shift!');
+    } catch (error) {
+      console.error('Error signing up:', error);
+      showNotification('Failed to sign up. Please try again.');
+    } finally {
+      setIsSigningUp(null);
     }
   };
 
-  const handleCancelShift = (eventId: string) => {
-    setMyShifts(myShifts.filter(id => id !== eventId));
-    showNotification('Shift cancelled.');
+  const handleCancelShift = async (eventId: string) => {
+    const docId = myShiftDocs.get(eventId);
+    if (!docId) return;
+    try {
+      await deleteDoc(doc(db, 'volunteerShifts', docId));
+      setMyShiftIds(prev => prev.filter(id => id !== eventId));
+      setMyShiftDocs(prev => {
+        const next = new Map(prev);
+        next.delete(eventId);
+        return next;
+      });
+      showNotification('Shift cancelled.');
+    } catch (error) {
+      console.error('Error cancelling shift:', error);
+      showNotification('Failed to cancel. Please try again.');
+    }
   };
 
   const handleCalendarSync = (shift: VolunteerShift) => {
@@ -213,7 +272,7 @@ export default function Volunteer() {
   };
 
   const filteredShifts = useMemo(() => {
-    return MOCK_SHIFTS
+    return allShifts
       .map(shift => {
         if (userLocation && shift.latitude && shift.longitude) {
           return {
@@ -224,7 +283,7 @@ export default function Volunteer() {
         return shift;
       })
       .filter(shift => 
-        !myShifts.includes(shift.event_id) &&
+        !myShiftIds.includes(shift.event_id) &&
         (shift.event_name.toLowerCase().includes(searchQuery.toLowerCase()) ||
          shift.location.toLowerCase().includes(searchQuery.toLowerCase()))
       )
@@ -236,11 +295,11 @@ export default function Volunteer() {
         }
         return new Date(a.date).getTime() - new Date(b.date).getTime();
       });
-  }, [userLocation, myShifts, searchQuery]);
+  }, [userLocation, myShiftIds, searchQuery]);
 
   const upcomingShifts = useMemo(() => {
-    return MOCK_SHIFTS.filter(shift => myShifts.includes(shift.event_id));
-  }, [myShifts]);
+    return allShifts.filter(shift => myShiftIds.includes(shift.event_id));
+  }, [myShiftIds]);
 
   const mapMarkers: MapMarker[] = useMemo(() => {
     return filteredShifts
@@ -284,7 +343,7 @@ export default function Volunteer() {
             activeTab === 'upcoming' ? 'bg-white text-stone-800 shadow-sm' : 'text-stone-500 hover:text-stone-700'
           }`}
         >
-          My Schedule {myShifts.length > 0 && <span className="ml-1 bg-emerald-100 text-emerald-700 px-2 py-0.5 rounded-full text-xs">{myShifts.length}</span>}
+          My Schedule {myShiftIds.length > 0 && <span className="ml-1 bg-emerald-100 text-emerald-700 px-2 py-0.5 rounded-full text-xs">{myShiftIds.length}</span>}
         </button>
         <button
           onClick={() => setActiveTab('log')}
@@ -356,7 +415,12 @@ export default function Volunteer() {
             </div>
           )}
 
-          {viewMode === 'map' ? (
+          {loadingShifts ? (
+            <div className="text-center py-16 bg-white rounded-3xl border border-stone-100 shadow-[0_2px_8px_rgba(0,0,0,0.04)]">
+              <Loader2 className="w-8 h-8 animate-spin text-emerald-600 mx-auto mb-3" />
+              <p className="text-stone-500 font-medium">Loading available shifts...</p>
+            </div>
+          ) : viewMode === 'map' ? (
             <div className="animate-in fade-in zoom-in-95 duration-300">
               <ResourceMap markers={mapMarkers} userLocation={userLocation} />
             </div>
@@ -395,12 +459,16 @@ export default function Volunteer() {
                         {shift.volunteers_needed} volunteers needed
                       </div>
                     </div>
-                    <button 
+                    <button
                     onClick={() => handleSignUp(shift.event_id)}
-                    className="shrink-0 bg-emerald-700 text-white px-8 py-3 rounded-xl font-medium hover:bg-emerald-800 transition-colors flex items-center justify-center gap-2"
+                    disabled={isSigningUp === shift.event_id}
+                    className="shrink-0 bg-emerald-700 text-white px-8 py-3 rounded-xl font-medium hover:bg-emerald-800 transition-colors flex items-center justify-center gap-2 disabled:opacity-50"
                   >
-                    Sign Up
-                    <ChevronRight className="w-4 h-4" />
+                    {isSigningUp === shift.event_id ? (
+                      <><Loader2 className="w-4 h-4 animate-spin" /> Signing Up...</>
+                    ) : (
+                      <>Sign Up <ChevronRight className="w-4 h-4" /></>
+                    )}
                   </button>
                 </div>
               ))
@@ -479,15 +547,45 @@ export default function Volunteer() {
         <div className="bg-white rounded-3xl p-8 border border-stone-100 shadow-[0_2px_8px_rgba(0,0,0,0.04)] max-w-xl mx-auto">
           <h3 className="text-xl font-semibold text-stone-800 mb-6">Log Volunteer Hours</h3>
           
-          <form className="space-y-6" onSubmit={(e) => { e.preventDefault(); showNotification('Hours logged successfully!'); }}>
+          <form className="space-y-6" onSubmit={async (e) => {
+            e.preventDefault();
+            const form = e.target as HTMLFormElement;
+            const shiftSelect = form.querySelector('select') as HTMLSelectElement;
+            const hoursInput = form.querySelector('input[type="number"]') as HTMLInputElement;
+            const eventId = shiftSelect?.value;
+            const hours = parseFloat(hoursInput?.value || '0');
+            if (!eventId || !hours) { showNotification('Please select a shift and enter hours.'); return; }
+            try {
+              let photoUrl: string | undefined;
+              if (photoFile) {
+                const storageRef = ref(storage, `volunteer-photos/${getAnonymousId()}/${Date.now()}-${photoFile.name}`);
+                await uploadBytes(storageRef, photoFile);
+                photoUrl = await getDownloadURL(storageRef);
+              }
+              await addDoc(collection(db, 'volunteerShifts'), {
+                eventId,
+                userId: getAnonymousId(),
+                date: new Date().toISOString(),
+                status: 'completed',
+                hoursLogged: hours,
+                ...(photoUrl && { photoUrl }),
+                createdAt: serverTimestamp(),
+              });
+              showNotification('Hours logged successfully!');
+              form.reset();
+              setPhoto(null);
+              setPhotoFile(null);
+            } catch (error) {
+              console.error('Error logging hours:', error);
+              showNotification('Failed to log hours. Please try again.');
+            }
+          }}>
             <div>
               <label className="block text-sm font-medium text-stone-700 mb-2">Select Shift</label>
               <select className="w-full border border-stone-200 rounded-xl px-4 py-3 focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:border-transparent bg-stone-50 hover:bg-stone-100 transition-colors cursor-pointer">
-                <option value="">Select a past shift...</option>
-                <option value="1">Mobile Market - Mar 10, 2026</option>
-                <option value="2">Pantry Sorting - Mar 12, 2026</option>
-                {myShifts.map(id => {
-                  const shift = MOCK_SHIFTS.find(s => s.event_id === id);
+                <option value="">Select a shift...</option>
+                {myShiftIds.map(id => {
+                  const shift = allShifts.find(s => s.event_id === id);
                   if (!shift) return null;
                   return (
                     <option key={id} value={id}>
@@ -495,6 +593,11 @@ export default function Volunteer() {
                     </option>
                   );
                 })}
+                {allShifts.filter(s => !myShiftIds.includes(s.event_id)).map(shift => (
+                  <option key={shift.event_id} value={shift.event_id}>
+                    {shift.event_name} - {new Date(shift.date).toLocaleDateString()}
+                  </option>
+                ))}
               </select>
             </div>
 
