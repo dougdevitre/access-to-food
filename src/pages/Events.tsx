@@ -54,7 +54,7 @@ export default function Events() {
           // Mock coordinates if missing (around St. Louis)
           const lat = eventData.latitude || 38.6270 + (Math.random() - 0.5) * 0.2;
           const lng = eventData.longitude || -90.1994 + (Math.random() - 0.5) * 0.2;
-          return { id: doc.id, ...eventData, latitude: lat, longitude: lng };
+          return { ...eventData, id: doc.id, latitude: lat, longitude: lng };
         });
         setEvents(data);
       } catch (error) {

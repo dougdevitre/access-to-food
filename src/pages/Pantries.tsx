@@ -57,7 +57,7 @@ export default function Pantries() {
           // Mock coordinates if missing (around St. Louis)
           const lat = pantryData.latitude || 38.6270 + (Math.random() - 0.5) * 0.2;
           const lng = pantryData.longitude || -90.1994 + (Math.random() - 0.5) * 0.2;
-          return { id: doc.id, ...pantryData, latitude: lat, longitude: lng };
+          return { ...pantryData, id: doc.id, latitude: lat, longitude: lng };
         });
         
         // Sort alphabetically by default
