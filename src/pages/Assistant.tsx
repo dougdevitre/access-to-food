@@ -1,11 +1,13 @@
 import React, { useState, useRef, useEffect } from 'react';
-import { GoogleGenAI, Type, FunctionDeclaration, Content, Part } from '@google/genai';
-import { Send, Bot, User, Loader2 } from 'lucide-react';
+import Anthropic from '@anthropic-ai/sdk';
+import { Send, Bot, User, Loader2, AlertTriangle } from 'lucide-react';
 import ReactMarkdown from 'react-markdown';
 import remarkGfm from 'remark-gfm';
 import rehypeRaw from 'rehype-raw';
 import { collection, getDocs, query } from 'firebase/firestore';
 import { db } from '../firebase';
+
+const API_KEY_CONFIGURED = !!process.env.ANTHROPIC_API_KEY;
 
 const SYSTEM_PROMPT = `You are a helpful AI assistant for access-to-food, part of the access-to series.
 
@@ -30,14 +32,14 @@ interface Message {
   content: string;
 }
 
-const searchPantriesDeclaration: FunctionDeclaration = {
+const searchPantriesTool: Anthropic.Tool = {
   name: "searchPantries",
   description: "Search for food pantries or distribution events. You can optionally provide a search term like a city, zip code, or name.",
-  parameters: {
-    type: Type.OBJECT,
+  input_schema: {
+    type: "object" as const,
     properties: {
       searchTerm: {
-        type: Type.STRING,
+        type: "string",
         description: "Optional search term to filter pantries by name, address, city, zip, or county.",
       },
     },
@@ -51,9 +53,9 @@ export default function Assistant() {
   const [input, setInput] = useState('');
   const [isLoading, setIsLoading] = useState(false);
   const messagesEndRef = useRef<HTMLDivElement>(null);
-  
-  // Keep track of the raw conversation history for the Gemini API
-  const [conversationHistory, setConversationHistory] = useState<Content[]>([]);
+
+  // Keep track of the raw conversation history for the Claude API
+  const [conversationHistory, setConversationHistory] = useState<Anthropic.MessageParam[]>([]);
 
   const scrollToBottom = () => {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
@@ -68,7 +70,7 @@ export default function Assistant() {
       const q = query(collection(db, 'pantries'));
       const snapshot = await getDocs(q);
       let data = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
-      
+
       if (searchTerm) {
         const lowerTerm = searchTerm.toLowerCase();
         data = data.filter((p: any) => {
@@ -78,7 +80,7 @@ export default function Assistant() {
           return orgName.includes(lowerTerm) || fullAddress.includes(lowerTerm) || county.includes(lowerTerm);
         });
       }
-      
+
       // Limit to top 5 to avoid exceeding token limits
       return data.slice(0, 5);
     } catch (error) {
@@ -97,71 +99,71 @@ export default function Assistant() {
     setIsLoading(true);
 
     try {
-      const ai = new GoogleGenAI({ apiKey: process.env.GEMINI_API_KEY });
-      
-      const newUserContent: Content = {
-        role: 'user',
-        parts: [{ text: userMessage }]
-      };
-      
-      let currentHistory = [...conversationHistory, newUserContent];
+      const client = new Anthropic({ apiKey: process.env.ANTHROPIC_API_KEY, dangerouslyAllowBrowser: true });
 
-      let response = await ai.models.generateContent({
-        model: 'gemini-3-flash-preview',
-        contents: currentHistory,
-        config: {
-          systemInstruction: SYSTEM_PROMPT,
-          tools: [{ functionDeclarations: [searchPantriesDeclaration] }],
-        }
+      const newUserMessage: Anthropic.MessageParam = {
+        role: 'user',
+        content: userMessage,
+      };
+
+      let currentHistory: Anthropic.MessageParam[] = [...conversationHistory, newUserMessage];
+
+      let response = await client.messages.create({
+        model: 'claude-sonnet-4-20250514',
+        max_tokens: 1024,
+        system: SYSTEM_PROMPT,
+        tools: [searchPantriesTool],
+        messages: currentHistory,
       });
 
-      // Handle function calls if the model decides to use the tool
-      if (response.functionCalls && response.functionCalls.length > 0) {
-        const functionCall = response.functionCalls[0];
-        
-        if (functionCall.name === 'searchPantries') {
-          const args = functionCall.args as { searchTerm?: string };
+      // Handle tool use if the model decides to use a tool
+      if (response.stop_reason === 'tool_use') {
+        const toolUseBlock = response.content.find(
+          (block): block is Anthropic.ContentBlock & { type: 'tool_use' } => block.type === 'tool_use'
+        );
+
+        if (toolUseBlock && toolUseBlock.name === 'searchPantries') {
+          const args = toolUseBlock.input as { searchTerm?: string };
           const searchResults = await executeSearchPantries(args.searchTerm);
-          
-          // Add the model's function call to history
-          const modelFunctionCallContent: Content = {
-            role: 'model',
-            parts: [{ functionCall: functionCall }]
-          };
-          
-          // Add the function response to history
-          const functionResponseContent: Content = {
-            role: 'user', // Function responses are sent as 'user' role
-            parts: [{
-              functionResponse: {
-                name: 'searchPantries',
-                response: { result: searchResults }
-              }
-            }]
-          };
-          
-          currentHistory = [...currentHistory, modelFunctionCallContent, functionResponseContent];
-          
-          // Call the model again with the function results
-          response = await ai.models.generateContent({
-            model: 'gemini-3-flash-preview',
-            contents: currentHistory,
-            config: {
-              systemInstruction: SYSTEM_PROMPT,
-              tools: [{ functionDeclarations: [searchPantriesDeclaration] }],
-            }
+
+          // Add the assistant's tool use response to history
+          currentHistory = [
+            ...currentHistory,
+            { role: 'assistant', content: response.content },
+            {
+              role: 'user',
+              content: [{
+                type: 'tool_result',
+                tool_use_id: toolUseBlock.id,
+                content: JSON.stringify(searchResults),
+              }],
+            },
+          ];
+
+          // Call Claude again with the tool results
+          response = await client.messages.create({
+            model: 'claude-sonnet-4-20250514',
+            max_tokens: 1024,
+            system: SYSTEM_PROMPT,
+            tools: [searchPantriesTool],
+            messages: currentHistory,
           });
         }
       }
 
-      if (response.text) {
-        const assistantMessage = response.text;
+      // Extract text from response content blocks
+      const textBlocks = response.content.filter(
+        (block): block is Anthropic.TextBlock => block.type === 'text'
+      );
+      const assistantMessage = textBlocks.map(b => b.text).join('\n');
+
+      if (assistantMessage) {
         setMessages(prev => [...prev, { role: 'assistant', content: assistantMessage }]);
-        
+
         // Update history with the final response
         setConversationHistory([
           ...currentHistory,
-          { role: 'model', parts: [{ text: assistantMessage }] }
+          { role: 'assistant', content: assistantMessage },
         ]);
       } else {
         throw new Error('No response text');
@@ -187,6 +189,15 @@ export default function Assistant() {
       </div>
 
       <div className="flex-1 overflow-y-auto p-6 space-y-6 bg-stone-50">
+        {!API_KEY_CONFIGURED && (
+          <div className="bg-amber-50 border border-amber-200 rounded-2xl p-5 flex items-start gap-3">
+            <AlertTriangle className="w-5 h-5 text-amber-600 shrink-0 mt-0.5" />
+            <div>
+              <p className="font-semibold text-amber-800">AI Assistant Unavailable</p>
+              <p className="text-sm text-amber-700 mt-1">The Anthropic API key is not configured. The chat assistant requires a valid API key to function. Please set the <code className="bg-amber-100 px-1.5 py-0.5 rounded text-xs font-mono">ANTHROPIC_API_KEY</code> environment variable.</p>
+            </div>
+          </div>
+        )}
         {messages.map((msg, idx) => (
           <div key={idx} className={`flex gap-4 ${msg.role === 'user' ? 'justify-end' : 'justify-start'}`}>
             {msg.role === 'assistant' && (
@@ -194,10 +205,10 @@ export default function Assistant() {
                 <Bot className="w-6 h-6 text-emerald-700" />
               </div>
             )}
-            <div 
+            <div
               className={`max-w-[85%] md:max-w-[75%] rounded-3xl p-5 shadow-sm ${
-                msg.role === 'user' 
-                  ? 'bg-emerald-700 text-white rounded-tr-sm' 
+                msg.role === 'user'
+                  ? 'bg-emerald-700 text-white rounded-tr-sm'
                   : 'bg-white text-stone-800 border border-stone-100 rounded-tl-sm'
               }`}
             >
@@ -205,8 +216,8 @@ export default function Assistant() {
                 <p className="whitespace-pre-wrap">{msg.content}</p>
               ) : (
                 <div className="prose prose-sm max-w-none prose-emerald">
-                  <ReactMarkdown 
-                    remarkPlugins={[remarkGfm]} 
+                  <ReactMarkdown
+                    remarkPlugins={[remarkGfm]}
                     rehypePlugins={[rehypeRaw]}
                     components={{
                       a: ({node, ...props}) => <a {...props} className="text-emerald-600 hover:text-emerald-700 underline underline-offset-2" target="_blank" rel="noopener noreferrer" />,
@@ -255,13 +266,13 @@ export default function Assistant() {
             type="text"
             value={input}
             onChange={(e) => setInput(e.target.value)}
-            placeholder="Type your message here..."
+            placeholder={API_KEY_CONFIGURED ? "Type your message here..." : "AI assistant is not configured"}
             className="flex-1 bg-stone-50 border border-stone-200 rounded-full pl-6 pr-16 py-4 focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:border-transparent shadow-sm font-medium text-stone-800 placeholder:text-stone-400"
-            disabled={isLoading}
+            disabled={isLoading || !API_KEY_CONFIGURED}
           />
           <button
             type="submit"
-            disabled={!input.trim() || isLoading}
+            disabled={!input.trim() || isLoading || !API_KEY_CONFIGURED}
             className="absolute right-2.5 top-1/2 -translate-y-1/2 w-11 h-11 rounded-full bg-emerald-600 text-white flex items-center justify-center hover:bg-emerald-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors shadow-sm"
           >
             <Send className="w-5 h-5 ml-0.5" />

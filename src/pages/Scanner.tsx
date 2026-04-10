@@ -1,8 +1,10 @@
 import React, { useState, useRef } from 'react';
 import { Camera, Upload, Loader2, CheckCircle2, AlertCircle, PackageSearch, AlertTriangle, Info, Save } from 'lucide-react';
-import { GoogleGenAI, Type } from '@google/genai';
+import Anthropic from '@anthropic-ai/sdk';
 import { collection, addDoc, serverTimestamp } from 'firebase/firestore';
 import { db } from '../firebase';
+
+const API_KEY_CONFIGURED = !!process.env.ANTHROPIC_API_KEY;
 
 interface InventoryItem {
   category: string;
@@ -20,7 +22,7 @@ export default function Scanner() {
   const [isAnalyzing, setIsAnalyzing] = useState(false);
   const [results, setResults] = useState<InventoryItem[] | null>(null);
   const [error, setError] = useState<string | null>(null);
-  
+
   const [isDragging, setIsDragging] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
   const [saveSuccess, setSaveSuccess] = useState(false);
@@ -31,14 +33,14 @@ export default function Scanner() {
     reader.onloadend = () => {
       const result = reader.result as string;
       setPhoto(result);
-      
+
       // Extract base64 data and mime type
       const match = result.match(/^data:(image\/[a-zA-Z+]+);base64,(.+)$/);
       if (match) {
         setMimeType(match[1]);
         setBase64Data(match[2]);
       }
-      
+
       setResults(null);
       setError(null);
       setSaveSuccess(false);
@@ -74,68 +76,59 @@ export default function Scanner() {
 
   const analyzeImage = async () => {
     if (!base64Data || !mimeType) return;
-    
+
     setIsAnalyzing(true);
     setError(null);
-    
-    try {
-      const ai = new GoogleGenAI({ apiKey: process.env.GEMINI_API_KEY });
-      
-      const imagePart = {
-        inlineData: {
-          mimeType: mimeType,
-          data: base64Data,
-        },
-      };
-      
-      const textPart = {
-        text: "You are an expert food bank inventory analyst. Analyze this pantry shelf image in detail. Identify the food categories present (e.g., Canned Goods, Produce, Dairy, Grains, Proteins, Snacks). For each category, estimate the stock level (High, Medium, Low, Empty), provide an estimated count of visible items, determine if there is a critical shortage that requires immediate attention, suggest a recommended action (e.g., 'Restock immediately', 'Adequate supply'), and provide specific notes on the items visible (brands, types, packaging).",
-      };
 
-      const response = await ai.models.generateContent({
-        model: 'gemini-3.1-pro-preview',
-        contents: { parts: [imagePart, textPart] },
-        config: {
-          responseMimeType: "application/json",
-          responseSchema: {
-            type: Type.ARRAY,
-            items: {
-              type: Type.OBJECT,
-              properties: {
-                category: {
-                  type: Type.STRING,
-                  description: "The food category (e.g., Canned Goods, Produce, Grains)",
-                },
-                stockLevel: {
-                  type: Type.STRING,
-                  enum: ["High", "Medium", "Low", "Empty"],
-                  description: "The estimated stock level",
-                },
-                estimatedItemCount: {
-                  type: Type.INTEGER,
-                  description: "Estimated number of visible items in this category",
-                },
-                criticalShortage: {
-                  type: Type.BOOLEAN,
-                  description: "True if this category is critically low and needs immediate restocking",
-                },
-                recommendedAction: {
-                  type: Type.STRING,
-                  description: "A short recommended action (e.g., 'Restock immediately', 'Monitor levels')",
-                },
-                notes: {
-                  type: Type.STRING,
-                  description: "Brief notes on specific items visible in this category",
-                }
+    try {
+      const client = new Anthropic({ apiKey: process.env.ANTHROPIC_API_KEY, dangerouslyAllowBrowser: true });
+
+      const response = await client.messages.create({
+        model: 'claude-sonnet-4-20250514',
+        max_tokens: 2048,
+        messages: [{
+          role: 'user',
+          content: [
+            {
+              type: 'image',
+              source: {
+                type: 'base64',
+                media_type: mimeType as 'image/jpeg' | 'image/png' | 'image/gif' | 'image/webp',
+                data: base64Data,
               },
-              required: ["category", "stockLevel", "criticalShortage", "recommendedAction"]
-            }
-          }
-        }
+            },
+            {
+              type: 'text',
+              text: `You are an expert food bank inventory analyst. Analyze this pantry shelf image in detail. Identify the food categories present (e.g., Canned Goods, Produce, Dairy, Grains, Proteins, Snacks). For each category, estimate the stock level (High, Medium, Low, Empty), provide an estimated count of visible items, determine if there is a critical shortage that requires immediate attention, suggest a recommended action (e.g., 'Restock immediately', 'Adequate supply'), and provide specific notes on the items visible (brands, types, packaging).
+
+Respond ONLY with a valid JSON array. Each element must have this shape:
+{
+  "category": "string",
+  "stockLevel": "High" | "Medium" | "Low" | "Empty",
+  "estimatedItemCount": number,
+  "criticalShortage": boolean,
+  "recommendedAction": "string",
+  "notes": "string"
+}
+
+Do not include any text outside the JSON array.`,
+            },
+          ],
+        }],
       });
 
-      if (response.text) {
-        const parsedResults = JSON.parse(response.text) as InventoryItem[];
+      const textBlock = response.content.find(
+        (block): block is Anthropic.TextBlock => block.type === 'text'
+      );
+
+      if (textBlock) {
+        // Extract JSON array from response (handle potential markdown code blocks)
+        let jsonStr = textBlock.text.trim();
+        const jsonMatch = jsonStr.match(/\[[\s\S]*\]/);
+        if (jsonMatch) {
+          jsonStr = jsonMatch[0];
+        }
+        const parsedResults = JSON.parse(jsonStr) as InventoryItem[];
         setResults(parsedResults);
       } else {
         throw new Error("No response from AI");
@@ -165,18 +158,28 @@ export default function Scanner() {
         <p className="text-stone-600 font-medium">Scan pantry shelves to automatically detect food categories and estimate stock levels.</p>
       </div>
 
+      {!API_KEY_CONFIGURED && (
+        <div className="bg-amber-50 border border-amber-200 rounded-2xl p-5 flex items-start gap-3">
+          <AlertTriangle className="w-5 h-5 text-amber-600 shrink-0 mt-0.5" />
+          <div>
+            <p className="font-semibold text-amber-800">Scanner Unavailable</p>
+            <p className="text-sm text-amber-700 mt-1">The Anthropic API key is not configured. Image analysis requires a valid API key. Please set the <code className="bg-amber-100 px-1.5 py-0.5 rounded text-xs font-mono">ANTHROPIC_API_KEY</code> environment variable.</p>
+          </div>
+        </div>
+      )}
+
       <div className="grid md:grid-cols-2 gap-8">
         <div className="bg-white rounded-3xl p-8 border border-stone-100 shadow-[0_2px_8px_rgba(0,0,0,0.04)] flex flex-col">
           <h3 className="text-xl font-semibold text-stone-800 mb-6 flex items-center gap-3">
             <Camera className="w-6 h-6 text-emerald-600" />
             Capture Shelves
           </h3>
-          
+
           <div className="flex-1 flex flex-col">
             {photo ? (
               <div className="relative rounded-2xl overflow-hidden border border-stone-200 bg-stone-50 aspect-[4/3] flex items-center justify-center mb-6">
                 <img src={photo} alt="Pantry shelf" className="max-h-full object-contain" />
-                <button 
+                <button
                   type="button"
                   onClick={() => {
                     setPhoto(null);
@@ -190,14 +193,14 @@ export default function Scanner() {
                 </button>
               </div>
             ) : (
-              <div 
+              <div
                 onClick={() => fileInputRef.current?.click()}
                 onDragOver={handleDragOver}
                 onDragLeave={handleDragLeave}
                 onDrop={handleDrop}
                 className={`flex-1 min-h-[300px] border-2 border-dashed rounded-2xl p-10 flex flex-col items-center justify-center cursor-pointer transition-all mb-6 ${
-                  isDragging 
-                    ? 'border-emerald-500 bg-emerald-50' 
+                  isDragging
+                    ? 'border-emerald-500 bg-emerald-50'
                     : 'border-stone-200 hover:bg-stone-50 hover:border-emerald-400'
                 }`}
               >
@@ -212,19 +215,19 @@ export default function Scanner() {
                 </span>
               </div>
             )}
-            
-            <input 
-              type="file" 
-              accept="image/*" 
-              capture="environment" 
-              className="hidden" 
+
+            <input
+              type="file"
+              accept="image/*"
+              capture="environment"
+              className="hidden"
               ref={fileInputRef}
               onChange={handlePhotoCapture}
             />
-            
-            <button 
+
+            <button
               onClick={analyzeImage}
-              disabled={!photo || isAnalyzing}
+              disabled={!photo || isAnalyzing || !API_KEY_CONFIGURED}
               className="w-full bg-emerald-700 text-white font-medium py-4 rounded-2xl hover:bg-emerald-800 transition-colors flex items-center justify-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed mt-auto shadow-sm"
             >
               {isAnalyzing ? (
@@ -247,7 +250,7 @@ export default function Scanner() {
             <CheckCircle2 className="w-6 h-6 text-emerald-600" />
             Analysis Results
           </h3>
-          
+
           <div className="flex-1 overflow-y-auto">
             {!photo && !results && !isAnalyzing && (
               <div className="h-full flex flex-col items-center justify-center text-stone-400 space-y-4 py-16">
@@ -255,21 +258,21 @@ export default function Scanner() {
                 <p className="font-medium">Take a photo to see inventory analysis</p>
               </div>
             )}
-            
+
             {isAnalyzing && (
               <div className="h-full flex flex-col items-center justify-center text-emerald-600 space-y-5 py-16">
                 <Loader2 className="w-12 h-12 animate-spin" />
                 <p className="font-semibold animate-pulse text-lg">AI is scanning the shelves...</p>
               </div>
             )}
-            
+
             {error && (
               <div className="bg-rose-50 text-rose-700 p-5 rounded-2xl flex items-start gap-3 border border-rose-100">
                 <AlertCircle className="w-5 h-5 shrink-0 mt-0.5" />
                 <p className="text-sm font-medium">{error}</p>
               </div>
             )}
-            
+
             {results && (
               <div className="space-y-4">
                 {results.length === 0 ? (
@@ -291,7 +294,7 @@ export default function Scanner() {
                           {item.stockLevel} Stock
                         </span>
                       </div>
-                      
+
                       <div className="grid grid-cols-2 gap-4 mb-3">
                         {item.estimatedItemCount !== undefined && (
                           <div className="bg-white p-2.5 rounded-xl border border-stone-100">
@@ -314,7 +317,7 @@ export default function Scanner() {
                     </div>
                   ))
                 )}
-                
+
                 <div className="pt-6 mt-6 border-t border-stone-100">
                   {saveSuccess ? (
                     <div className="bg-emerald-50 border border-emerald-200 rounded-2xl p-4 text-center flex items-center justify-center gap-2 animate-in fade-in duration-300">

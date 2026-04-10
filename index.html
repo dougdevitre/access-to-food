@@ -3,9 +3,54 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>access-to-food</title>
+    <meta name="description" content="A community platform connecting people with food resources, pantries, and volunteer opportunities in St. Louis." />
+    <meta name="theme-color" content="#047857" />
+
+    <!-- Open Graph / Social Sharing -->
+    <meta property="og:type" content="website" />
+    <meta property="og:title" content="access-to-food | Community Food Resource Hub" />
+    <meta property="og:description" content="Find food pantries, distribution events, SNAP assistance, and volunteer opportunities in the St. Louis area." />
+    <meta property="og:url" content="https://dougdevitre.github.io/access-to-food/" />
+    <meta property="og:site_name" content="access-to-food" />
+
+    <!-- Twitter Card -->
+    <meta name="twitter:card" content="summary" />
+    <meta name="twitter:title" content="access-to-food | Community Food Resource Hub" />
+    <meta name="twitter:description" content="Find food pantries, distribution events, SNAP assistance, and volunteer opportunities in the St. Louis area." />
+
+    <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🤝</text></svg>" />
+    <link rel="apple-touch-icon" href="/access-to-food/icons/icon-192.svg" />
+    <link rel="manifest" href="/access-to-food/manifest.json" />
+    <title>access-to-food | Community Food Resource Hub</title>
+
+    <!-- Splash screen styles (removed once React mounts) -->
+    <style>
+      #splash {
+        position: fixed;
+        inset: 0;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        background: #fafaf9;
+        z-index: 9999;
+        transition: opacity 0.3s ease;
+      }
+      #splash.fade-out { opacity: 0; pointer-events: none; }
+      #splash svg { animation: pulse 1.8s ease-in-out infinite; }
+      #splash h1 { font-family: system-ui, sans-serif; font-size: 1.5rem; font-weight: 700; color: #047857; margin-top: 1rem; }
+      #splash p { font-family: system-ui, sans-serif; font-size: 0.875rem; color: #78716c; margin-top: 0.25rem; }
+      @keyframes pulse { 0%, 100% { transform: scale(1); opacity: 1; } 50% { transform: scale(1.08); opacity: 0.7; } }
+    </style>
   </head>
   <body>
+    <!-- Branded splash screen shown while JS loads -->
+    <div id="splash">
+      <svg xmlns="http://www.w3.org/2000/svg" width="56" height="56" viewBox="0 0 24 24" fill="none" stroke="#047857" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M7 11v 8a1 1 0 0 1-1 1H4a1 1 0 0 1-1-1v-7a1 1 0 0 1 1-1h3m0-1V4a1 1 0 0 1 1-1h1a2 2 0 0 1 2 2v1.5M7 10h3m7 1v8a1 1 0 0 0 1 1h2a1 1 0 0 0 1-1v-7a1 1 0 0 0-1-1h-3m0-1V4a1 1 0 0 0-1-1h-1a2 2 0 0 0-2 2v1.5M17 10h-3m-2 1.5a2.5 2.5 0 0 1-5 0v-4a2.5 2.5 0 0 1 5 0z"/></svg>
+      <h1>access-to-food</h1>
+      <p>Loading community resources...</p>
+    </div>
+
     <div id="root"></div>
     <script type="module" src="/src/main.tsx"></script>
   </body>
