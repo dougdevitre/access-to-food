@@ -1,20 +1,60 @@
-<div align="center">
-<img width="1200" height="475" alt="GHBanner" src="https://github.com/user-attachments/assets/0aa67016-6eaf-458a-adb2-6e31a0763ed6" />
-</div>
+# Access To Food
 
-# Run and deploy your AI Studio app
+> Food access and nutrition resources — food bank locators, SNAP/WIC navigation, and community nutrition tools. Part of the Access To initiative.
 
-This contains everything you need to run your app locally.
+[![MIT License](https://img.shields.io/badge/license-MIT-blue.svg)](LICENSE) 
 
-View your app in AI Studio: https://ai.studio/apps/2bee5d7b-0fc4-4bc9-81ae-b9380368c009
+---
 
-## Run Locally
+## Overview
 
-**Prerequisites:**  Node.js
+Food access and nutrition resources — food bank locators, SNAP/WIC navigation, and community nutrition tools. Part of the Access To initiative.
 
+## Features
 
-1. Install dependencies:
-   `npm install`
-2. Set the `GEMINI_API_KEY` in [.env.local](.env.local) to your Gemini API key
-3. Run the app:
-   `npm run dev`
+- **Food bank locators** 
+- **SNAP/WIC navigation** 
+- **Community nutrition tools. Part of the Access To initiative** 
+
+## Tech Stack
+
+React, TypeScript, Tailwind CSS, Claude AI, Firebase, Express, Vite
+
+## Getting Started
+
+### Prerequisites
+
+- Node.js 18+ (LTS recommended)
+- npm, yarn, or pnpm
+
+### Installation
+
+```bash
+git clone https://github.com/dougdevitre/access-to-food.git
+cd access-to-food
+npm install
+```
+
+### Development
+
+```bash
+npm run dev
+```
+
+Open [http://localhost:3000](http://localhost:3000) in your browser.
+
+## Deployment
+
+Deploy to your preferred platform (Vercel, AWS, etc.).
+
+## Contributing
+
+Contributions are welcome! Please open an issue or submit a pull request.
+
+## License
+
+MIT -- see [LICENSE](LICENSE) for details.
+
+---
+
+Part of the [Access To](https://cotrackpro.com) civic tech initiative -- open-source tools for community access to justice, health, housing, and services.
