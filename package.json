@@ -9,7 +9,8 @@
     "preview": "vite preview",
     "clean": "rm -rf dist",
     "lint": "tsc --noEmit",
-    "seed": "tsx scripts/seed.ts"
+    "seed": "tsx scripts/seed.ts",
+    "smoke": "bash scripts/smoke-test.sh"
   },
   "dependencies": {
     "@anthropic-ai/sdk": "^0.87.0",

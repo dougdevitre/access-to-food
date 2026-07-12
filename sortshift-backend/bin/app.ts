@@ -10,6 +10,7 @@ new SortShiftStack(app, "SortShift-dev", {
 
 new SortShiftStack(app, "SortShift-prod", {
   envName: "prod",
-  // Replace with the real game origin before first prod deploy — never "*".
-  corsOrigins: ["https://REPLACE-WITH-GAME-DOMAIN"],
+  // The game origin — must match the deployed SPA exactly (never "*"). If Vercel
+  // assigns a suffixed domain instead of this one, update it here and redeploy.
+  corsOrigins: ["https://access-to-food.vercel.app"],
 });
