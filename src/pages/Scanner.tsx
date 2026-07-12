@@ -1,10 +1,14 @@
-import React, { useState, useRef } from 'react';
+import React, { useState, useRef, useEffect } from 'react';
 import { Camera, Upload, Loader2, CheckCircle2, AlertCircle, PackageSearch, AlertTriangle, Info, Save } from 'lucide-react';
-import Anthropic from '@anthropic-ai/sdk';
 import { collection, addDoc, serverTimestamp } from 'firebase/firestore';
 import { db } from '../firebase';
+import { ApiError, getConfigured, postJson } from '../lib/api';
 
-const API_KEY_CONFIGURED = !!process.env.ANTHROPIC_API_KEY;
+// Phone photos routinely exceed Vercel's 4.5 MB request-body limit, so images
+// are downscaled on a canvas before upload. Shelf photos don't need more
+// resolution than this for category/stock analysis.
+const MAX_IMAGE_EDGE = 1600;
+const JPEG_QUALITY = 0.85;
 
 interface InventoryItem {
   category: string;
@@ -26,12 +30,44 @@ export default function Scanner() {
   const [isDragging, setIsDragging] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
   const [saveSuccess, setSaveSuccess] = useState(false);
+  // null = backend availability unknown (still checking, or unreachable)
+  const [configured, setConfigured] = useState<boolean | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
+
+  useEffect(() => {
+    getConfigured('/api/scan').then(setConfigured);
+  }, []);
+
+  // Downscale to MAX_IMAGE_EDGE on the long side and re-encode as JPEG. Falls
+  // back to the original data URL for anything the canvas can't decode.
+  const downscaleImage = (dataUrl: string): Promise<string> =>
+    new Promise((resolve) => {
+      const img = new Image();
+      img.onload = () => {
+        const scale = Math.min(1, MAX_IMAGE_EDGE / Math.max(img.width, img.height));
+        if (scale === 1) {
+          resolve(dataUrl);
+          return;
+        }
+        const canvas = document.createElement('canvas');
+        canvas.width = Math.round(img.width * scale);
+        canvas.height = Math.round(img.height * scale);
+        const ctx = canvas.getContext('2d');
+        if (!ctx) {
+          resolve(dataUrl);
+          return;
+        }
+        ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
+        resolve(canvas.toDataURL('image/jpeg', JPEG_QUALITY));
+      };
+      img.onerror = () => resolve(dataUrl);
+      img.src = dataUrl;
+    });
 
   const processFile = (file: File) => {
     const reader = new FileReader();
-    reader.onloadend = () => {
-      const result = reader.result as string;
+    reader.onloadend = async () => {
+      const result = await downscaleImage(reader.result as string);
       setPhoto(result);
 
       // Extract base64 data and mime type
@@ -81,61 +117,19 @@ export default function Scanner() {
     setError(null);
 
     try {
-      const client = new Anthropic({ apiKey: process.env.ANTHROPIC_API_KEY, dangerouslyAllowBrowser: true });
-
-      const response = await client.messages.create({
-        model: 'claude-sonnet-4-20250514',
-        max_tokens: 2048,
-        messages: [{
-          role: 'user',
-          content: [
-            {
-              type: 'image',
-              source: {
-                type: 'base64',
-                media_type: mimeType as 'image/jpeg' | 'image/png' | 'image/gif' | 'image/webp',
-                data: base64Data,
-              },
-            },
-            {
-              type: 'text',
-              text: `You are an expert food bank inventory analyst. Analyze this pantry shelf image in detail. Identify the food categories present (e.g., Canned Goods, Produce, Dairy, Grains, Proteins, Snacks). For each category, estimate the stock level (High, Medium, Low, Empty), provide an estimated count of visible items, determine if there is a critical shortage that requires immediate attention, suggest a recommended action (e.g., 'Restock immediately', 'Adequate supply'), and provide specific notes on the items visible (brands, types, packaging).
-
-Respond ONLY with a valid JSON array. Each element must have this shape:
-{
-  "category": "string",
-  "stockLevel": "High" | "Medium" | "Low" | "Empty",
-  "estimatedItemCount": number,
-  "criticalShortage": boolean,
-  "recommendedAction": "string",
-  "notes": "string"
-}
-
-Do not include any text outside the JSON array.`,
-            },
-          ],
-        }],
-      });
-
-      const textBlock = response.content.find(
-        (block): block is Anthropic.TextBlock => block.type === 'text'
-      );
-
-      if (textBlock) {
-        // Extract JSON array from response (handle potential markdown code blocks)
-        let jsonStr = textBlock.text.trim();
-        const jsonMatch = jsonStr.match(/\[[\s\S]*\]/);
-        if (jsonMatch) {
-          jsonStr = jsonMatch[0];
-        }
-        const parsedResults = JSON.parse(jsonStr) as InventoryItem[];
-        setResults(parsedResults);
-      } else {
-        throw new Error("No response from AI");
-      }
+      // The analysis prompt, model, and parsing live in api/scan.ts.
+      const response = await postJson<{ items: InventoryItem[] }>('/api/scan', { mimeType, base64Data });
+      setResults(response.items);
     } catch (err) {
       console.error("Error analyzing image:", err);
-      setError("Failed to analyze the image. Please try again.");
+      if (err instanceof ApiError && err.code === 'not_configured') {
+        setConfigured(false);
+        setError('The AI backend is not configured on the server yet.');
+      } else if (err instanceof ApiError && err.code === 'image_too_large') {
+        setError('This image is too large to analyze. Please try a smaller photo.');
+      } else {
+        setError("Failed to analyze the image. Please try again.");
+      }
     } finally {
       setIsAnalyzing(false);
     }
@@ -158,12 +152,12 @@ Do not include any text outside the JSON array.`,
         <p className="text-stone-600 font-medium">Scan pantry shelves to automatically detect food categories and estimate stock levels.</p>
       </div>
 
-      {!API_KEY_CONFIGURED && (
+      {configured === false && (
         <div className="bg-amber-50 border border-amber-200 rounded-2xl p-5 flex items-start gap-3">
           <AlertTriangle className="w-5 h-5 text-amber-600 shrink-0 mt-0.5" />
           <div>
             <p className="font-semibold text-amber-800">Scanner Unavailable</p>
-            <p className="text-sm text-amber-700 mt-1">The Anthropic API key is not configured. Image analysis requires a valid API key. Please set the <code className="bg-amber-100 px-1.5 py-0.5 rounded text-xs font-mono">ANTHROPIC_API_KEY</code> environment variable.</p>
+            <p className="text-sm text-amber-700 mt-1">The AI backend is not configured yet. A site administrator needs to set the <code className="bg-amber-100 px-1.5 py-0.5 rounded text-xs font-mono">ANTHROPIC_API_KEY</code> environment variable on the server.</p>
           </div>
         </div>
       )}
@@ -227,7 +221,7 @@ Do not include any text outside the JSON array.`,
 
             <button
               onClick={analyzeImage}
-              disabled={!photo || isAnalyzing || !API_KEY_CONFIGURED}
+              disabled={!photo || isAnalyzing || configured === false}
               className="w-full bg-emerald-700 text-white font-medium py-4 rounded-2xl hover:bg-emerald-800 transition-colors flex items-center justify-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed mt-auto shadow-sm"
             >
               {isAnalyzing ? (

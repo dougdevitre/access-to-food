@@ -198,5 +198,21 @@ service cloud.firestore {
                     (isAdmin() || request.resource.data.status == resource.data.status);
       allow delete: if isAdmin();
     }
+
+    // Written by the Inventory Scanner page. Without this block the collection
+    // fell through to the default deny and every save silently failed.
+    // Note: the app has no sign-in flow yet, so these writes succeed only for
+    // authenticated staff/admin sessions — see README "Known limitations".
+    match /inventory_scans/{scanId} {
+      allow read: if isAdmin() || isPantryStaff();
+      allow create: if (isAdmin() || isPantryStaff()) &&
+                    hasOnlyAllowedFields(['items', 'scannedAt', 'totalCategories', 'criticalCount']) &&
+                    request.resource.data.items is list &&
+                    request.resource.data.scannedAt is timestamp &&
+                    request.resource.data.totalCategories is number &&
+                    request.resource.data.criticalCount is number;
+      allow update: if false;
+      allow delete: if isAdmin();
+    }
   }
 }

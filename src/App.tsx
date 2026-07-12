@@ -1,5 +1,5 @@
 import { Suspense, lazy } from 'react';
-import { HashRouter, Routes, Route } from 'react-router-dom';
+import { BrowserRouter, Routes, Route } from 'react-router-dom';
 import Layout from './components/Layout';
 
 // Lazy load pages for better initial load performance
@@ -14,6 +14,7 @@ const Resources = lazy(() => import('./pages/Resources'));
 const Assistant = lazy(() => import('./pages/Assistant'));
 const Scanner = lazy(() => import('./pages/Scanner'));
 const CommandCenter = lazy(() => import('./pages/CommandCenter'));
+const SortShift = lazy(() => import('./pages/SortShift'));
 
 // Loading fallback
 const PageLoader = () => (
@@ -24,7 +25,7 @@ const PageLoader = () => (
 
 export default function App() {
   return (
-    <HashRouter>
+    <BrowserRouter>
       <Suspense fallback={<PageLoader />}>
         <Routes>
           <Route path="/" element={<Layout />}>
@@ -39,9 +40,10 @@ export default function App() {
             <Route path="assistant" element={<Assistant />} />
             <Route path="scanner" element={<Scanner />} />
             <Route path="dashboard" element={<CommandCenter />} />
+            <Route path="sortshift" element={<SortShift />} />
           </Route>
         </Routes>
       </Suspense>
-    </HashRouter>
+    </BrowserRouter>
   );
 }

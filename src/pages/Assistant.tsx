@@ -1,50 +1,25 @@
 import React, { useState, useRef, useEffect } from 'react';
-import Anthropic from '@anthropic-ai/sdk';
+import type Anthropic from '@anthropic-ai/sdk';
 import { Send, Bot, User, Loader2, AlertTriangle } from 'lucide-react';
 import ReactMarkdown from 'react-markdown';
 import remarkGfm from 'remark-gfm';
 import rehypeRaw from 'rehype-raw';
 import { collection, getDocs, query } from 'firebase/firestore';
 import { db } from '../firebase';
+import { ApiError, getConfigured, postJson } from '../lib/api';
 
-const API_KEY_CONFIGURED = !!process.env.ANTHROPIC_API_KEY;
-
-const SYSTEM_PROMPT = `You are a helpful AI assistant for access-to-food, part of the access-to series.
-
-Responsibilities:
-- Help users find food resources and partner agencies
-- Explain access-to-food programs (Emergency Food, Community Meals, Mobile Markets)
-- Help people volunteer for access-to-food
-- Provide donation impact information ($1 provides $6 in food and services)
-- Provide access-to-food contact info: Community Support Hub | (555) 123-4567
-
-When a user asks for food near a location or today, use the searchPantries tool to find relevant partner agencies.
-When returning agency information, include:
-- agency name
-- address
-- hours
-- eligibility (if available in services)
-
-Always respond with empathy and actionable guidance.`;
+// The system prompt, tool schema, model, and token budget live in
+// api/assistant.ts — the server pins them so the key stays server-side.
 
 interface Message {
   role: 'user' | 'assistant';
   content: string;
 }
 
-const searchPantriesTool: Anthropic.Tool = {
-  name: "searchPantries",
-  description: "Search for food pantries or distribution events. You can optionally provide a search term like a city, zip code, or name.",
-  input_schema: {
-    type: "object" as const,
-    properties: {
-      searchTerm: {
-        type: "string",
-        description: "Optional search term to filter pantries by name, address, city, zip, or county.",
-      },
-    },
-  },
-};
+interface AssistantResponse {
+  content: Anthropic.ContentBlock[];
+  stop_reason: string | null;
+}
 
 export default function Assistant() {
   const [messages, setMessages] = useState<Message[]>([
@@ -52,6 +27,8 @@ export default function Assistant() {
   ]);
   const [input, setInput] = useState('');
   const [isLoading, setIsLoading] = useState(false);
+  // null = backend availability unknown (still checking, or unreachable)
+  const [configured, setConfigured] = useState<boolean | null>(null);
   const messagesEndRef = useRef<HTMLDivElement>(null);
 
   // Keep track of the raw conversation history for the Claude API
@@ -64,6 +41,10 @@ export default function Assistant() {
   useEffect(() => {
     scrollToBottom();
   }, [messages]);
+
+  useEffect(() => {
+    getConfigured('/api/assistant').then(setConfigured);
+  }, []);
 
   const executeSearchPantries = async (searchTerm?: string) => {
     try {
@@ -99,8 +80,6 @@ export default function Assistant() {
     setIsLoading(true);
 
     try {
-      const client = new Anthropic({ apiKey: process.env.ANTHROPIC_API_KEY, dangerouslyAllowBrowser: true });
-
       const newUserMessage: Anthropic.MessageParam = {
         role: 'user',
         content: userMessage,
@@ -108,13 +87,7 @@ export default function Assistant() {
 
       let currentHistory: Anthropic.MessageParam[] = [...conversationHistory, newUserMessage];
 
-      let response = await client.messages.create({
-        model: 'claude-sonnet-4-20250514',
-        max_tokens: 1024,
-        system: SYSTEM_PROMPT,
-        tools: [searchPantriesTool],
-        messages: currentHistory,
-      });
+      let response = await postJson<AssistantResponse>('/api/assistant', { messages: currentHistory });
 
       // Handle tool use if the model decides to use a tool
       if (response.stop_reason === 'tool_use') {
@@ -141,13 +114,7 @@ export default function Assistant() {
           ];
 
           // Call Claude again with the tool results
-          response = await client.messages.create({
-            model: 'claude-sonnet-4-20250514',
-            max_tokens: 1024,
-            system: SYSTEM_PROMPT,
-            tools: [searchPantriesTool],
-            messages: currentHistory,
-          });
+          response = await postJson<AssistantResponse>('/api/assistant', { messages: currentHistory });
         }
       }
 
@@ -170,7 +137,12 @@ export default function Assistant() {
       }
     } catch (error) {
       console.error('Error generating response:', error);
-      setMessages(prev => [...prev, { role: 'assistant', content: 'I am sorry, I encountered an error while trying to respond. Please try again later.' }]);
+      if (error instanceof ApiError && error.code === 'not_configured') {
+        setConfigured(false);
+        setMessages(prev => [...prev, { role: 'assistant', content: 'The AI assistant is not configured on the server yet. Please check back later.' }]);
+      } else {
+        setMessages(prev => [...prev, { role: 'assistant', content: 'I am sorry, I encountered an error while trying to respond. Please try again later.' }]);
+      }
     } finally {
       setIsLoading(false);
     }
@@ -189,12 +161,12 @@ export default function Assistant() {
       </div>
 
       <div className="flex-1 overflow-y-auto p-6 space-y-6 bg-stone-50">
-        {!API_KEY_CONFIGURED && (
+        {configured === false && (
           <div className="bg-amber-50 border border-amber-200 rounded-2xl p-5 flex items-start gap-3">
             <AlertTriangle className="w-5 h-5 text-amber-600 shrink-0 mt-0.5" />
             <div>
               <p className="font-semibold text-amber-800">AI Assistant Unavailable</p>
-              <p className="text-sm text-amber-700 mt-1">The Anthropic API key is not configured. The chat assistant requires a valid API key to function. Please set the <code className="bg-amber-100 px-1.5 py-0.5 rounded text-xs font-mono">ANTHROPIC_API_KEY</code> environment variable.</p>
+              <p className="text-sm text-amber-700 mt-1">The AI backend is not configured yet. A site administrator needs to set the <code className="bg-amber-100 px-1.5 py-0.5 rounded text-xs font-mono">ANTHROPIC_API_KEY</code> environment variable on the server.</p>
             </div>
           </div>
         )}
@@ -266,13 +238,13 @@ export default function Assistant() {
             type="text"
             value={input}
             onChange={(e) => setInput(e.target.value)}
-            placeholder={API_KEY_CONFIGURED ? "Type your message here..." : "AI assistant is not configured"}
+            placeholder={configured === false ? "AI assistant is not configured" : "Type your message here..."}
             className="flex-1 bg-stone-50 border border-stone-200 rounded-full pl-6 pr-16 py-4 focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:border-transparent shadow-sm font-medium text-stone-800 placeholder:text-stone-400"
-            disabled={isLoading || !API_KEY_CONFIGURED}
+            disabled={isLoading || configured === false}
           />
           <button
             type="submit"
-            disabled={!input.trim() || isLoading || !API_KEY_CONFIGURED}
+            disabled={!input.trim() || isLoading || configured === false}
             className="absolute right-2.5 top-1/2 -translate-y-1/2 w-11 h-11 rounded-full bg-emerald-600 text-white flex items-center justify-center hover:bg-emerald-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors shadow-sm"
           >
             <Send className="w-5 h-5 ml-0.5" />

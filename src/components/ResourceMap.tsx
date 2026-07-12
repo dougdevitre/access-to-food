@@ -1,5 +1,8 @@
 import React, { useState } from 'react';
 import { APIProvider, Map, AdvancedMarker, Pin, InfoWindow } from '@vis.gl/react-google-maps';
+import { MapPinOff } from 'lucide-react';
+
+const MAPS_API_KEY = import.meta.env.VITE_GOOGLE_MAPS_API_KEY as string | undefined;
 
 export interface MapMarker {
   id: string;
@@ -34,9 +37,25 @@ export default function ResourceMap({
     }
   };
 
+  // Mounting APIProvider with an empty key renders a broken gray Google error
+  // tile — show a friendly placeholder instead.
+  if (!MAPS_API_KEY) {
+    return (
+      <div className="w-full h-full min-h-[400px] rounded-2xl overflow-hidden border border-stone-200 shadow-sm bg-stone-50 flex flex-col items-center justify-center gap-3 p-8 text-center">
+        <MapPinOff className="w-10 h-10 text-stone-300" />
+        <p className="font-semibold text-stone-600">Map unavailable</p>
+        <p className="text-sm text-stone-500 max-w-sm">
+          The Google Maps API key is not configured. Set the{' '}
+          <code className="bg-stone-100 px-1.5 py-0.5 rounded text-xs font-mono">VITE_GOOGLE_MAPS_API_KEY</code>{' '}
+          environment variable at build time to enable the map.
+        </p>
+      </div>
+    );
+  }
+
   return (
     <div className="w-full h-full min-h-[400px] rounded-2xl overflow-hidden border border-stone-200 shadow-sm relative">
-      <APIProvider apiKey={import.meta.env.VITE_GOOGLE_MAPS_API_KEY || ''}>
+      <APIProvider apiKey={MAPS_API_KEY}>
         <Map
           defaultCenter={center}
           defaultZoom={11}

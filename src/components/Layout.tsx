@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { Outlet, Link, useLocation } from 'react-router-dom';
-import { Home, MapPin, Calendar, HeartHandshake, Gift, FileText, Info, Bot, Camera, Activity, Menu, X } from 'lucide-react';
+import { Home, MapPin, Calendar, HeartHandshake, Gift, FileText, Info, Bot, Camera, Activity, Menu, X, Gamepad2 } from 'lucide-react';
 import { clsx } from 'clsx';
 
 export default function Layout() {
@@ -33,6 +33,7 @@ export default function Layout() {
     { path: '/assistant', label: 'AI Assistant', icon: Bot },
     { path: '/scanner', label: 'Scanner', icon: Camera },
     { path: '/volunteer', label: 'Volunteer', icon: HeartHandshake },
+    { path: '/sortshift', label: 'Sort the Shift', icon: Gamepad2 },
     { path: '/donate', label: 'Donate', icon: Gift },
     { path: '/snap', label: 'SNAP Help', icon: FileText },
     { path: '/resources', label: 'Nutrition & Resources', icon: Info },
