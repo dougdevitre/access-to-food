@@ -1,4 +1,4 @@
 User-agent: *
 Allow: /
 
-Sitemap: https://access-to-food.vercel.app/sitemap.xml
+Sitemap: https://food.cotrackpro.com/sitemap.xml

@@ -8,7 +8,7 @@ manual checks below.
 ## 0. Automated smoke test
 
 ```bash
-npm run smoke -- https://access-to-food.vercel.app
+npm run smoke -- https://food.cotrackpro.com
 ```
 
 Covers the `/api` health + error paths, the SPA rewrite (deep links + `/api`
@@ -22,12 +22,12 @@ functions are served there; use `vercel dev` or the real URL for those.)
 - [ ] `ANTHROPIC_API_KEY` set (a **rotated** key — the old one leaked via GitHub Pages).
 - [ ] `VITE_GOOGLE_MAPS_API_KEY` set, if maps are wanted (build-time var).
 - [ ] `VITE_SORTSHIFT_API_URL` set to the deployed game backend's API URL, if the game is wanted.
-- [ ] Production URL confirmed. If it is **not** `access-to-food.vercel.app`, update `index.html` og:url, `public/sitemap.xml`, `public/robots.txt`, and the game backend's prod `corsOrigins` (`sortshift-backend/bin/app.ts`), then redeploy both.
+- [ ] Custom domain `food.cotrackpro.com` added in Vercel (Settings → Domains) and a `CNAME food → cname.vercel-dns.com` record added at the cotrackpro.com DNS host; SSL provisioned. The canonical URLs (`index.html` og:url, `public/sitemap.xml`, `public/robots.txt`) and the game backend's prod `corsOrigins` (`sortshift-backend/bin/app.ts`) already point at it. If the final domain differs, update those and redeploy both the site and the CDK stack.
 
 ## 2. Firebase (new origin)
 
-- [ ] Add the production `*.vercel.app` origin to **Firebase Auth → authorized domains**.
-- [ ] Add the origin to the **Google Maps API key referrer allowlist**.
+- [ ] Add `food.cotrackpro.com` (and the `*.vercel.app` alias) to **Firebase Auth → authorized domains**.
+- [ ] Add `food.cotrackpro.com` to the **Google Maps API key referrer allowlist**.
 - [ ] Pantries and Events pages load real data from Firestore on the deployed origin (public reads).
 
 ## 3. AI Assistant (needs `ANTHROPIC_API_KEY`)

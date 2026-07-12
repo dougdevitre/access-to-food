@@ -5,7 +5,7 @@
 #
 # Usage:
 #   bash scripts/smoke-test.sh [base-url]
-#   npm run smoke -- https://access-to-food.vercel.app
+#   npm run smoke -- https://food.cotrackpro.com
 #
 # Default base URL is the production site. Point it at `vercel dev`
 # (http://localhost:3000) or a preview URL as needed.
@@ -16,7 +16,7 @@
 
 set -u
 
-BASE="${1:-https://access-to-food.vercel.app}"
+BASE="${1:-https://food.cotrackpro.com}"
 BASE="${BASE%/}"
 
 pass=0

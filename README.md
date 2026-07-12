@@ -4,7 +4,7 @@
 
 [![MIT License](https://img.shields.io/badge/license-MIT-blue.svg)](LICENSE)
 
-**Live site:** https://access-to-food.vercel.app
+**Live site:** https://food.cotrackpro.com
 
 ## Features
 

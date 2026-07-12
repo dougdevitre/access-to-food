@@ -10,7 +10,8 @@ new SortShiftStack(app, "SortShift-dev", {
 
 new SortShiftStack(app, "SortShift-prod", {
   envName: "prod",
-  // The game origin — must match the deployed SPA exactly (never "*"). If Vercel
-  // assigns a suffixed domain instead of this one, update it here and redeploy.
-  corsOrigins: ["https://access-to-food.vercel.app"],
+  // Allowed game origins — must match every domain the SPA is served from
+  // exactly (never "*"). food.cotrackpro.com is canonical; the Vercel alias is
+  // kept so the game also works when opened at the *.vercel.app URL.
+  corsOrigins: ["https://food.cotrackpro.com", "https://access-to-food.vercel.app"],
 });
