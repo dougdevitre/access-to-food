@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { Link } from 'react-router-dom';
-import { MapPin, Calendar, HeartHandshake, Gift, FileText, AlertTriangle, ArrowRight, Search, Info } from 'lucide-react';
+import { MapPin, Calendar, HeartHandshake, Gift, FileText, AlertTriangle, ArrowRight, Search, Info, Gamepad2 } from 'lucide-react';
 
 export default function Home() {
   const [intent, setIntent] = useState<'get_help' | 'give_help'>('get_help');
@@ -131,6 +131,23 @@ export default function Home() {
                 <span className="font-semibold text-lg leading-tight">Donate</span>
               </Link>
             </div>
+
+            {/* Sort the Shift game */}
+            <Link
+              to="/sortshift"
+              className="bg-white border border-stone-100 hover:border-emerald-200 text-stone-800 rounded-3xl p-6 flex items-center justify-between shadow-[0_2px_8px_rgba(0,0,0,0.04)] hover:shadow-[0_8px_24px_rgba(0,0,0,0.06)] transition-all active:scale-95"
+            >
+              <div className="flex items-center gap-5">
+                <div className="bg-emerald-50 p-4 rounded-2xl">
+                  <Gamepad2 className="w-6 h-6 text-emerald-600" />
+                </div>
+                <div className="flex flex-col text-left">
+                  <span className="font-semibold text-lg text-stone-800">Sort the Shift</span>
+                  <span className="text-stone-500 text-sm font-medium">Play the volunteer training game</span>
+                </div>
+              </div>
+              <ArrowRight className="w-5 h-5 text-stone-400" />
+            </Link>
 
             {/* Partner Login */}
             <div className="mt-8 bg-white border border-stone-100 shadow-[0_2px_8px_rgba(0,0,0,0.04)] rounded-3xl p-8 text-center space-y-4">

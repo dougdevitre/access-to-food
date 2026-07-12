@@ -18,8 +18,11 @@ Do not include any text outside the JSON array.`;
 const ALLOWED_MIME_TYPES = ['image/jpeg', 'image/png', 'image/gif', 'image/webp'] as const;
 type AllowedMimeType = (typeof ALLOWED_MIME_TYPES)[number];
 
-// ~4 MB decoded — headroom under Vercel's 4.5 MB request-body limit.
-const MAX_BASE64_LENGTH = 5_500_000;
+// base64 length is ~1 byte per char in the JSON body, so cap it below Vercel's
+// 4.5 MB request-body limit (leaving room for JSON overhead) — otherwise Vercel
+// rejects the request with its own error before this handler's 413 can fire.
+// 4M chars ≈ 3 MB decoded; client-side downscale keeps real payloads far under.
+const MAX_BASE64_LENGTH = 4_000_000;
 
 export default async function handler(req: VercelRequest, res: VercelResponse) {
   if (!gateRequest(req, res)) return;
@@ -35,7 +38,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     return;
   }
   if (base64Data.length > MAX_BASE64_LENGTH) {
-    sendError(res, 413, 'image_too_large', 'Image is too large. Please use a photo under ~4 MB.');
+    sendError(res, 413, 'image_too_large', 'Image is too large. Please use a smaller photo (under ~3 MB).');
     return;
   }
 
