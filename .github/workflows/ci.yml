@@ -1,0 +1,36 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Typecheck
+        run: npm run lint
+
+      - name: Build
+        run: npm run build
+
+      # The Anthropic key lives only in the Vercel serverless functions. If a
+      # key value or the browser-SDK escape hatch ever shows up in the client
+      # bundle, fail the build. (The literal var name is allowed — it appears
+      # in admin-facing "not configured" banner text.)
+      - name: Assert no Anthropic key or SDK in client bundle
+        run: |
+          ! grep -rE "sk-ant-|dangerouslyAllowBrowser|api\.anthropic\.com" dist/assets
