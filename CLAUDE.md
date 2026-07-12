@@ -17,6 +17,7 @@ There are no tests yet; CI runs lint + build + a bundle-leak grep.
 - AI backend: `api/assistant.ts` and `api/scan.ts` (Vercel Node functions) call Claude (`claude-sonnet-5`, `thinking: disabled`) with the model, system prompt, tool schema, and max_tokens pinned server-side. Shared helpers in `api/_lib/claude.ts`. GET on either endpoint returns `{configured: boolean}`; errors use `{error: {code, message}}`.
 - The Assistant's tool loop runs client-side: `src/pages/Assistant.tsx` POSTs history to `/api/assistant`, executes the `searchPantries` tool against Firestore in the browser, appends the `tool_result` turn, and POSTs again. `src/lib/api.ts` is the fetch helper (`postJson`, `getConfigured`, typed `ApiError`).
 - Data: Firestore via `src/firebase.ts`, configured from `firebase-applet-config.json` with a **named database** (`firestoreDatabaseId`) — any Admin SDK usage must pass it to `getFirestore(app, dbId)`.
+- Game: `src/pages/SortShift.tsx` + `src/lib/sortshift.ts` talk to `sortshift-backend/` (standalone AWS CDK app with its own package.json/tests, **excluded from the root tsconfig** — typecheck/test it from inside its directory). The SPA finds it via `VITE_SORTSHIFT_API_URL` and falls back to practice mode when unset. Game rules must respect the backend's integrity checks: shift ≥ 55s before score submit, `meals = round(lbs / 1.2)`, initials `[A-Z]{1,3}`.
 
 ## Hard constraints
 

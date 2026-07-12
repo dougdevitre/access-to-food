@@ -14,6 +14,7 @@ const Resources = lazy(() => import('./pages/Resources'));
 const Assistant = lazy(() => import('./pages/Assistant'));
 const Scanner = lazy(() => import('./pages/Scanner'));
 const CommandCenter = lazy(() => import('./pages/CommandCenter'));
+const SortShift = lazy(() => import('./pages/SortShift'));
 
 // Loading fallback
 const PageLoader = () => (
@@ -39,6 +40,7 @@ export default function App() {
             <Route path="assistant" element={<Assistant />} />
             <Route path="scanner" element={<Scanner />} />
             <Route path="dashboard" element={<CommandCenter />} />
+            <Route path="sortshift" element={<SortShift />} />
           </Route>
         </Routes>
       </Suspense>

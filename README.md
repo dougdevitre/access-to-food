@@ -14,6 +14,7 @@
 - **Inventory Scanner** — pantry staff photograph shelves and Claude vision estimates stock levels by category
 - **SNAP eligibility guide** — quick income-based eligibility estimate and application resources
 - **Volunteer & donate** — shift signups and donation information
+- **Sort the Shift** — a volunteer-training game: sort donations into the right bins, flag spoiled items, post your meals-provided score to a leaderboard
 - **Command Center dashboard** — at-a-glance pantry status, staffing, and risk overview
 
 ## Architecture
@@ -21,6 +22,7 @@
 - **Frontend:** Vite + React 19 + TypeScript + Tailwind CSS 4, a single-page app served statically by Vercel (`BrowserRouter` with an SPA rewrite in `vercel.json`)
 - **AI backend:** two Vercel serverless functions — `api/assistant.ts` (chat with a pantry-search tool loop) and `api/scan.ts` (vision inventory analysis). The `ANTHROPIC_API_KEY` lives **only** in these functions; it is never embedded in the client bundle, and CI fails if it ever appears there.
 - **Data:** Firebase Firestore, accessed directly from the browser and guarded by `firestore.rules` (public read for pantries/events; writes require staff/admin roles)
+- **Game backend:** `sortshift-backend/` is a standalone AWS CDK app (API Gateway + Lambda + DynamoDB) with HMAC-signed single-use shift tokens, server-side plausibility checks, and no PII (initials only). Deploy it per its own [README](sortshift-backend/README.md), then point the SPA at it with `VITE_SORTSHIFT_API_URL`; without it the game runs in practice mode.
 
 ## Getting Started
 
@@ -62,6 +64,7 @@ Other scripts: `npm run lint` (typecheck), `npm run build`, `npm run preview`, `
 |---|---|---|
 | `ANTHROPIC_API_KEY` | Server only — Vercel dashboard / `.env` for `vercel dev` | Claude API access for `/api/assistant` and `/api/scan`. **Never** prefix with `VITE_` or add to `vite.config.ts` — that would publish it in the bundle. |
 | `VITE_GOOGLE_MAPS_API_KEY` | Build-time, embedded in the bundle by design | Google Maps for the pantry/event maps. Restrict by HTTP referrer in the Google Cloud console. |
+| `VITE_SORTSHIFT_API_URL` | Build-time, embedded in the bundle by design | Base URL of the deployed Sort the Shift API (CDK `ApiUrl` output). Unset = practice mode. |
 | `GOOGLE_APPLICATION_CREDENTIALS` | Local only, for `npm run seed` | Path to a Firebase service-account JSON. |
 
 ## Seeding Sample Data

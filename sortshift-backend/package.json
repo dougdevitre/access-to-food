@@ -1,0 +1,38 @@
+{
+  "name": "sortshift-backend",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "typecheck": "tsc --noEmit",
+    "test": "vitest run",
+    "synth": "cdk synth",
+    "deploy:dev": "cdk deploy SortShift-dev --require-approval never"
+  },
+  "devDependencies": {
+    "@types/aws-lambda": "^8.10.162",
+    "@types/node": "^20.19.43",
+    "aws-cdk-lib": "^2.261.0",
+    "constructs": "^10.6.0",
+    "esbuild": "^0.24.0",
+    "typescript": "^5.9.3",
+    "vitest": "^2.1.9"
+  },
+  "dependencies": {
+    "@aws-sdk/client-dynamodb": "^3.1085.0",
+    "@aws-sdk/client-ssm": "^3.1085.0",
+    "@aws-sdk/lib-dynamodb": "^3.1085.0",
+    "jose": "^5.10.0",
+    "tsx": "^4.23.0",
+    "ulid": "^2.4.0"
+  },
+  "description": "",
+  "main": "index.js",
+  "directories": {
+    "lib": "lib",
+    "test": "test"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC"
+}
