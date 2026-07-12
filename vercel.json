@@ -1,4 +1,8 @@
 {
+  "functions": {
+    "api/assistant.ts": { "maxDuration": 30 },
+    "api/scan.ts": { "maxDuration": 60 }
+  },
   "rewrites": [
     { "source": "/((?!api/).*)", "destination": "/index.html" }
   ]
