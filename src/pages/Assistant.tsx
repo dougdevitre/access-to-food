@@ -22,6 +22,13 @@ interface AssistantResponse {
   stop_reason: string | null;
 }
 
+const STARTER_PROMPTS = [
+  'Find food near me',
+  'Am I eligible for SNAP?',
+  'How can I volunteer?',
+  'How do I donate?',
+];
+
 export default function Assistant() {
   usePageMeta('AI Assistant');
   const [messages, setMessages] = useState<Message[]>([
@@ -72,11 +79,15 @@ export default function Assistant() {
     }
   };
 
-  const handleSubmit = async (e: React.FormEvent) => {
+  const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    if (!input.trim() || isLoading) return;
+    sendMessage(input);
+  };
 
-    const userMessage = input.trim();
+  const sendMessage = async (raw: string) => {
+    if (!raw.trim() || isLoading) return;
+
+    const userMessage = raw.trim();
     setInput('');
     setMessages(prev => [...prev, { role: 'user', content: userMessage }]);
     setIsLoading(true);
@@ -235,6 +246,20 @@ export default function Assistant() {
       </div>
 
       <div className="p-6 bg-white border-t border-stone-100 shrink-0">
+        {configured !== false && messages.length <= 1 && !isLoading && (
+          <div className="flex flex-wrap gap-2 mb-4 max-w-4xl mx-auto">
+            {STARTER_PROMPTS.map((prompt) => (
+              <button
+                key={prompt}
+                type="button"
+                onClick={() => sendMessage(prompt)}
+                className="text-sm font-medium bg-emerald-50 text-emerald-700 border border-emerald-100 px-4 py-2 rounded-full hover:bg-emerald-100 transition-colors"
+              >
+                {prompt}
+              </button>
+            ))}
+          </div>
+        )}
         <form onSubmit={handleSubmit} className="flex gap-3 relative max-w-4xl mx-auto">
           <input
             type="text"
