@@ -1,7 +1,9 @@
 import { Link } from 'react-router-dom';
+import { usePageMeta } from '../lib/usePageMeta';
 import { Info, ExternalLink, Phone, FileText, HelpCircle, Apple, Salad, Droplets } from 'lucide-react';
 
 export default function Resources() {
+  usePageMeta('Nutrition & Resources');
   const resources = [
     {
       title: 'WIC (Women, Infants, and Children)',

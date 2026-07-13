@@ -1,7 +1,10 @@
 import React, { useState, useRef } from 'react';
+import { usePersistentState } from '../lib/usePersistentState';
+import { usePageMeta } from '../lib/usePageMeta';
 import { Gift, Heart, Utensils, Camera, CheckCircle2, Calculator, Users, Package, ArrowLeft } from 'lucide-react';
 
 export default function Donate() {
+  usePageMeta('Support Our Mission');
   const [activeTab, setActiveTab] = useState<'monetary' | 'food'>('monetary');
   const [amount, setAmount] = useState<number>(25);
   const [photo, setPhoto] = useState<string | null>(null);
@@ -9,7 +12,7 @@ export default function Donate() {
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   const [donationSubmitted, setDonationSubmitted] = useState(false);
-  const [foodDonationSubmitted, setFoodDonationSubmitted] = useState(false);
+  const [foodDonationSubmitted, setFoodDonationSubmitted] = usePersistentState<boolean>('donate.foodLogged', false);
 
   // Food Drive Calculator State
   const [participants, setParticipants] = useState<number>(100);

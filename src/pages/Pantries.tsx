@@ -3,6 +3,8 @@ import { collection, getDocs, query } from 'firebase/firestore';
 import { db } from '../firebase';
 import { MapPin, Clock, Phone, AlertCircle, Search, Info, Navigation, List, Map as MapIcon, ChevronDown, ChevronUp } from 'lucide-react';
 import ResourceMap, { MapMarker } from '../components/ResourceMap';
+import { usePageMeta } from '../lib/usePageMeta';
+import { SAMPLE_PANTRIES } from '../lib/sampleData';
 
 interface Pantry {
   id: string;
@@ -46,6 +48,9 @@ export default function Pantries() {
   const [locationError, setLocationError] = useState<string | null>(null);
   const [viewMode, setViewMode] = useState<'list' | 'map'>('list');
   const [expandedPantry, setExpandedPantry] = useState<string | null>(null);
+  const [usingSample, setUsingSample] = useState(false);
+
+  usePageMeta('Partner Agencies');
 
   useEffect(() => {
     async function fetchPantries() {
@@ -59,17 +64,28 @@ export default function Pantries() {
           const lng = pantryData.longitude || -90.1994 + (Math.random() - 0.5) * 0.2;
           return { id: doc.id, ...pantryData, latitude: lat, longitude: lng };
         });
-        
+
+        // No pantries in the database yet — show sample data so the page
+        // isn't blank on a fresh deployment.
+        if (data.length === 0) {
+          setPantries(SAMPLE_PANTRIES as Pantry[]);
+          setUsingSample(true);
+          return;
+        }
+
         // Sort alphabetically by default
         data.sort((a, b) => {
           const nameA = a.organization_name || a.name || '';
           const nameB = b.organization_name || b.name || '';
           return nameA.localeCompare(nameB);
         });
-        
+
         setPantries(data);
       } catch (error) {
         console.error('Error fetching pantries:', error);
+        // Fall back to sample data so a read failure doesn't leave a blank page.
+        setPantries(SAMPLE_PANTRIES as Pantry[]);
+        setUsingSample(true);
       } finally {
         setLoading(false);
       }
@@ -229,6 +245,13 @@ export default function Pantries() {
           </div>
         </div>
       </div>
+
+      {usingSample && (
+        <div className="bg-blue-50 text-blue-800 p-3 rounded-xl border border-blue-100 text-sm flex items-center gap-2">
+          <Info className="w-4 h-4 shrink-0" />
+          Showing sample agencies. Live listings will appear here once the directory is populated.
+        </div>
+      )}
 
       {locationError && (
         <div className="bg-rose-50 text-rose-700 p-3 rounded-xl border border-rose-200 text-sm flex items-center gap-2">

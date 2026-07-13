@@ -1,9 +1,11 @@
 import { useState, useEffect, useMemo } from 'react';
 import { collection, getDocs, query, orderBy, where } from 'firebase/firestore';
 import { db } from '../firebase';
-import { Calendar, MapPin, Clock, AlertCircle, List, Map as MapIcon, Navigation } from 'lucide-react';
+import { Calendar, MapPin, Clock, AlertCircle, List, Map as MapIcon, Navigation, Info } from 'lucide-react';
 import { format } from 'date-fns';
 import ResourceMap, { MapMarker } from '../components/ResourceMap';
+import { usePageMeta } from '../lib/usePageMeta';
+import { SAMPLE_EVENTS } from '../lib/sampleData';
 
 interface DistributionEvent {
   id: string;
@@ -37,6 +39,9 @@ export default function Events() {
   const [userLocation, setUserLocation] = useState<{lat: number, lng: number} | null>(null);
   const [isLocating, setIsLocating] = useState(false);
   const [locationError, setLocationError] = useState<string | null>(null);
+  const [usingSample, setUsingSample] = useState(false);
+
+  usePageMeta('Distribution Events');
 
   useEffect(() => {
     async function fetchEvents() {
@@ -44,7 +49,7 @@ export default function Events() {
         const now = new Date();
         // Only show upcoming events
         const q = query(
-          collection(db, 'events'), 
+          collection(db, 'events'),
           where('date', '>=', now),
           orderBy('date', 'asc')
         );
@@ -56,9 +61,21 @@ export default function Events() {
           const lng = eventData.longitude || -90.1994 + (Math.random() - 0.5) * 0.2;
           return { id: doc.id, ...eventData, latitude: lat, longitude: lng };
         });
+
+        // No upcoming events in the database — show sample events so the page
+        // isn't blank on a fresh deployment.
+        if (data.length === 0) {
+          setEvents(SAMPLE_EVENTS as unknown as DistributionEvent[]);
+          setUsingSample(true);
+          return;
+        }
+
         setEvents(data);
       } catch (error) {
         console.error('Error fetching events:', error);
+        // Fall back to sample data so a read failure doesn't leave a blank page.
+        setEvents(SAMPLE_EVENTS as unknown as DistributionEvent[]);
+        setUsingSample(true);
       } finally {
         setLoading(false);
       }
@@ -196,6 +213,13 @@ export default function Events() {
           </button>
         </div>
       </div>
+
+      {usingSample && (
+        <div className="bg-blue-50 text-blue-800 p-3 rounded-xl border border-blue-100 text-sm flex items-center gap-2">
+          <Info className="w-4 h-4 shrink-0" />
+          Showing sample events. Real distribution events will appear here once they're scheduled.
+        </div>
+      )}
 
       {locationError && (
         <div className="bg-rose-50 text-rose-700 p-3 rounded-xl border border-rose-200 text-sm flex items-center gap-2">
