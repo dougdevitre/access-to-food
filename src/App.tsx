@@ -1,6 +1,7 @@
 import { Suspense, lazy } from 'react';
 import { BrowserRouter, Routes, Route } from 'react-router-dom';
 import Layout from './components/Layout';
+import ErrorBoundary from './components/ErrorBoundary';
 
 // Lazy load pages for better initial load performance
 const Home = lazy(() => import('./pages/Home'));
@@ -26,8 +27,9 @@ const PageLoader = () => (
 export default function App() {
   return (
     <BrowserRouter>
-      <Suspense fallback={<PageLoader />}>
-        <Routes>
+      <ErrorBoundary>
+        <Suspense fallback={<PageLoader />}>
+          <Routes>
           <Route path="/" element={<Layout />}>
             <Route index element={<Home />} />
             <Route path="need-food" element={<NeedFood />} />
@@ -42,8 +44,9 @@ export default function App() {
             <Route path="dashboard" element={<CommandCenter />} />
             <Route path="sortshift" element={<SortShift />} />
           </Route>
-        </Routes>
-      </Suspense>
+          </Routes>
+        </Suspense>
+      </ErrorBoundary>
     </BrowserRouter>
   );
 }
