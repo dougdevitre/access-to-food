@@ -1,11 +1,12 @@
 import { useState, useEffect, useMemo } from 'react';
 import { collection, getDocs, query, orderBy, where } from 'firebase/firestore';
 import { db } from '../firebase';
-import { Calendar, MapPin, Clock, AlertCircle, List, Map as MapIcon, Navigation, Info } from 'lucide-react';
+import { Calendar, MapPin, Clock, AlertCircle, List, Map as MapIcon, Navigation, Info, CalendarPlus } from 'lucide-react';
 import { format } from 'date-fns';
 import ResourceMap, { MapMarker } from '../components/ResourceMap';
 import { usePageMeta } from '../lib/usePageMeta';
 import { SAMPLE_EVENTS } from '../lib/sampleData';
+import { downloadICS } from '../lib/calendar';
 
 interface DistributionEvent {
   id: string;
@@ -284,8 +285,8 @@ export default function Events() {
                   </div>
                 </div>
 
-                {/* Action */}
-                <div className="flex items-center md:items-end justify-end shrink-0 mt-4 md:mt-0">
+                {/* Actions */}
+                <div className="flex flex-col gap-2 shrink-0 mt-4 md:mt-0 md:justify-end">
                   <a 
                     href={`https://maps.google.com/?q=${encodeURIComponent(event.location)}`}
                     target="_blank"
@@ -294,6 +295,20 @@ export default function Events() {
                   >
                     Get Directions
                   </a>
+                  <button
+                    type="button"
+                    onClick={() => downloadICS({
+                      title: event.title,
+                      description: event.description,
+                      location: event.location,
+                      start: eventDate,
+                      uid: `${event.id}@access-to-food`,
+                    }, event.title.replace(/\s+/g, '-'))}
+                    className="w-full md:w-auto flex items-center justify-center gap-2 bg-stone-100 text-stone-700 font-medium px-8 py-3 rounded-xl hover:bg-stone-200 transition-colors"
+                  >
+                    <CalendarPlus className="w-4 h-4" />
+                    Add to Calendar
+                  </button>
                 </div>
               </div>
             );
