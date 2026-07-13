@@ -1,4 +1,5 @@
 import React, { useEffect, useMemo, useRef, useState } from 'react';
+import { usePageMeta } from '../lib/usePageMeta';
 import { Gamepad2, Trophy, Timer, AlertTriangle, CheckCircle2, XCircle, Loader2, RotateCcw, Users, Flag } from 'lucide-react';
 import {
   sortshiftEnabled, startShift, submitScore, submitMisses, fetchLeaderboard,
@@ -66,6 +67,7 @@ function randomItem(): ActiveItem {
 }
 
 export default function SortShift() {
+  usePageMeta('Sort the Shift');
   const [phase, setPhase] = useState<Phase>('intro');
   const [teamCode, setTeamCode] = useState('');
   const [token, setToken] = useState<string | null>(null);

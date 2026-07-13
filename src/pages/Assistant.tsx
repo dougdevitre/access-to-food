@@ -1,4 +1,5 @@
 import React, { useState, useRef, useEffect } from 'react';
+import { usePageMeta } from '../lib/usePageMeta';
 import type Anthropic from '@anthropic-ai/sdk';
 import { Send, Bot, User, Loader2, AlertTriangle } from 'lucide-react';
 import ReactMarkdown from 'react-markdown';
@@ -22,6 +23,7 @@ interface AssistantResponse {
 }
 
 export default function Assistant() {
+  usePageMeta('AI Assistant');
   const [messages, setMessages] = useState<Message[]>([
     { role: 'assistant', content: 'Hi there! I am your access-to-food Assistant. How can I help you today?' }
   ]);

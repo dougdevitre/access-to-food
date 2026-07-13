@@ -1,4 +1,5 @@
 import React, { useState, useRef, useEffect } from 'react';
+import { usePageMeta } from '../lib/usePageMeta';
 import { Camera, Upload, Loader2, CheckCircle2, AlertCircle, PackageSearch, AlertTriangle, Info, Save } from 'lucide-react';
 import { collection, addDoc, serverTimestamp } from 'firebase/firestore';
 import { db } from '../firebase';
@@ -20,6 +21,7 @@ interface InventoryItem {
 }
 
 export default function Scanner() {
+  usePageMeta('Inventory Scanner');
   const [photo, setPhoto] = useState<string | null>(null);
   const [base64Data, setBase64Data] = useState<string | null>(null);
   const [mimeType, setMimeType] = useState<string | null>(null);

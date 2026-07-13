@@ -1,8 +1,10 @@
 import { useState } from 'react';
+import { usePageMeta } from '../lib/usePageMeta';
 import { Link } from 'react-router-dom';
 import { MapPin, Calendar, HeartHandshake, Gift, FileText, AlertTriangle, ArrowRight, Search, Info, Gamepad2 } from 'lucide-react';
 
 export default function Home() {
+  usePageMeta();
   const [intent, setIntent] = useState<'get_help' | 'give_help'>('get_help');
 
   return (

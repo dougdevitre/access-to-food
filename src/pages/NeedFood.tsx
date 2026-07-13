@@ -1,8 +1,10 @@
 import { useState } from 'react';
+import { usePageMeta } from '../lib/usePageMeta';
 import { Link } from 'react-router-dom';
 import { MapPin, Calendar, Phone, ArrowRight, AlertTriangle } from 'lucide-react';
 
 export default function NeedFood() {
+  usePageMeta('Need Food Now');
   const [step, setStep] = useState(1);
   const [urgency, setUrgency] = useState<'immediate' | 'soon' | null>(null);
 

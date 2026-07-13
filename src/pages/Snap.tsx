@@ -1,12 +1,15 @@
 import React, { useState } from 'react';
+import { usePersistentState } from '../lib/usePersistentState';
+import { usePageMeta } from '../lib/usePageMeta';
 import { FileText, Phone, CheckCircle2, ArrowRight, Calculator, AlertCircle, ArrowLeft } from 'lucide-react';
 
 export default function Snap() {
+  usePageMeta('SNAP Help');
   const [householdSize, setHouseholdSize] = useState<number>(1);
   const [monthlyIncome, setMonthlyIncome] = useState<number | ''>('');
   const [showResult, setShowResult] = useState(false);
   const [showCallbackForm, setShowCallbackForm] = useState(false);
-  const [callbackSubmitted, setCallbackSubmitted] = useState(false);
+  const [callbackSubmitted, setCallbackSubmitted] = usePersistentState<boolean>('snap.callbackSubmitted', false);
   const [callbackName, setCallbackName] = useState('');
   const [callbackPhone, setCallbackPhone] = useState('');
 

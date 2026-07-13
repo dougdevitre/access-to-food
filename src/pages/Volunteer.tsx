@@ -1,4 +1,6 @@
 import React, { useState, useRef, useMemo } from 'react';
+import { usePersistentState } from '../lib/usePersistentState';
+import { usePageMeta } from '../lib/usePageMeta';
 import { Camera, Upload, CheckCircle2, Calendar, Clock, Search, MapPin, Users, Bell, CalendarPlus, ChevronRight, List, Map as MapIcon, Navigation, AlertCircle } from 'lucide-react';
 import ResourceMap, { MapMarker } from '../components/ResourceMap';
 
@@ -81,11 +83,12 @@ const MOCK_SHIFTS: VolunteerShift[] = [
 ];
 
 export default function Volunteer() {
+  usePageMeta('Volunteer');
   const [activeTab, setActiveTab] = useState<'search' | 'upcoming' | 'log'>('search');
   const [viewMode, setViewMode] = useState<'list' | 'map'>('list');
   const [photo, setPhoto] = useState<string | null>(null);
   const [searchQuery, setSearchQuery] = useState('');
-  const [myShifts, setMyShifts] = useState<string[]>([]);
+  const [myShifts, setMyShifts] = usePersistentState<string[]>('volunteer.myShifts', []);
   const [notification, setNotification] = useState<string | null>(null);
   const [userLocation, setUserLocation] = useState<{lat: number, lng: number} | null>(null);
   const [isLocating, setIsLocating] = useState(false);

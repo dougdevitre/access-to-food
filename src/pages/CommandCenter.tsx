@@ -4,6 +4,8 @@ import { db } from '../firebase';
 import { AlertTriangle, Activity, Users, Map as MapIcon, ShieldAlert, TrendingUp, PackageX, CheckCircle2 } from 'lucide-react';
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Legend } from 'recharts';
 import ResourceMap, { MapMarker } from '../components/ResourceMap';
+import { usePageMeta } from '../lib/usePageMeta';
+import { SAMPLE_PANTRIES } from '../lib/sampleData';
 
 interface Pantry {
   id: string;
@@ -37,15 +39,19 @@ export default function CommandCenter() {
   const [pantries, setPantries] = useState<Pantry[]>([]);
   const [loading, setLoading] = useState(true);
 
+  usePageMeta('Command Center');
+
   useEffect(() => {
     async function fetchPantries() {
       try {
         const q = query(collection(db, 'pantries'));
         const snapshot = await getDocs(q);
         const data = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as Pantry));
-        setPantries(data);
+        // Fall back to sample data so the dashboard isn't empty on a fresh deploy.
+        setPantries(data.length > 0 ? data : (SAMPLE_PANTRIES as Pantry[]));
       } catch (error) {
         console.error('Error fetching pantries:', error);
+        setPantries(SAMPLE_PANTRIES as Pantry[]);
       } finally {
         setLoading(false);
       }
