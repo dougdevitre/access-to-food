@@ -12,7 +12,7 @@ export default function Home() {
       {/* Header Section */}
       <div className="text-center space-y-2 pt-4">
         <h1 className="text-3xl font-black text-stone-800 tracking-tight">access-to-food</h1>
-        <p className="text-stone-500 font-medium px-4">
+        <p className="text-stone-600 font-medium px-4">
           Your community hub for food resources. Part of the access-to series.
         </p>
       </div>
@@ -21,20 +21,22 @@ export default function Home() {
       <div className="flex bg-stone-200/80 p-1 rounded-2xl mx-4 overflow-x-auto hide-scrollbar">
         <button
           onClick={() => setIntent('get_help')}
+          aria-pressed={intent === 'get_help'}
           className={`whitespace-nowrap flex-1 min-w-max py-3 px-4 rounded-xl text-sm font-bold transition-all ${
             intent === 'get_help' 
               ? 'bg-white text-stone-800 shadow-sm' 
-              : 'text-stone-500 hover:text-stone-700'
+              : 'text-stone-600 hover:text-stone-800'
           }`}
         >
           I Need Food
         </button>
         <button
           onClick={() => setIntent('give_help')}
+          aria-pressed={intent === 'give_help'}
           className={`whitespace-nowrap flex-1 min-w-max py-3 px-4 rounded-xl text-sm font-bold transition-all ${
             intent === 'give_help' 
               ? 'bg-white text-stone-800 shadow-sm' 
-              : 'text-stone-500 hover:text-stone-700'
+              : 'text-stone-600 hover:text-stone-800'
           }`}
         >
           I Want to Help
@@ -56,11 +58,11 @@ export default function Home() {
             {/* Emergency Action */}
             <Link 
               to="/need-food" 
-              className="bg-rose-600 hover:bg-rose-700 text-white rounded-3xl p-6 flex flex-col items-center justify-center text-center shadow-lg shadow-rose-600/20 transition-transform active:scale-95"
+              className="bg-rose-700 hover:bg-rose-800 text-white rounded-3xl p-6 flex flex-col items-center justify-center text-center shadow-lg shadow-rose-600/20 transition-transform active:scale-95"
             >
               <AlertTriangle className="w-10 h-10 mb-2 text-rose-100" />
               <span className="text-xl font-black tracking-wide">I Need Food Now</span>
-              <span className="text-rose-200 text-sm mt-1 font-medium">Find emergency resources immediately</span>
+              <span className="text-rose-50 text-sm mt-1 font-medium">Find emergency resources immediately</span>
             </Link>
 
             {/* Grid Actions */}

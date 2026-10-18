@@ -101,13 +101,13 @@ export default function Resources() {
 
       <div className="grid md:grid-cols-2 gap-6">
         {resources.map((resource, index) => (
-          <div key={index} className="bg-white rounded-3xl p-8 border border-stone-100 shadow-[0_2px_8px_rgba(0,0,0,0.04)] hover:shadow-md transition-all flex flex-col h-full">
+          <div key={index} className="bg-white rounded-3xl p-5 sm:p-8 border border-stone-100 shadow-[0_2px_8px_rgba(0,0,0,0.04)] hover:shadow-md transition-all flex flex-col h-full">
             <div className="flex items-start gap-4 mb-4">
               <div className="bg-stone-50 p-3 rounded-2xl shrink-0 border border-stone-100">
                 <Info className="w-6 h-6 text-stone-600" />
               </div>
               <div>
-                <h3 className="text-xl font-bold text-stone-800 leading-tight">{resource.title}</h3>
+                <h2 className="text-xl font-bold text-stone-800 leading-tight">{resource.title}</h2>
               </div>
             </div>
             
@@ -115,13 +115,13 @@ export default function Resources() {
             
             <div className="space-y-4 pt-6 border-t border-stone-100">
               {resource.phone && (
-                <a href={`tel:${resource.phone.replace(/[^0-9]/g, '')}`} className="flex items-center gap-3 text-stone-700 hover:text-emerald-700 font-semibold transition-colors">
+                <a href={`tel:${resource.phone.replace(/[^0-9]/g, '')}`} className="flex min-h-11 items-center gap-3 text-stone-700 hover:text-emerald-700 font-semibold transition-colors">
                   <Phone className="w-5 h-5" />
                   {resource.phone}
                 </a>
               )}
               {resource.link && (
-                <a href={resource.link} target="_blank" rel="noopener noreferrer" className="flex items-center gap-3 text-stone-700 hover:text-emerald-700 font-semibold transition-colors">
+                <a href={resource.link} target="_blank" rel="noopener noreferrer" className="flex min-h-11 items-center gap-3 text-stone-700 hover:text-emerald-700 font-semibold transition-colors">
                   <ExternalLink className="w-5 h-5" />
                   Visit Website
                 </a>

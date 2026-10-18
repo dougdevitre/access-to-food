@@ -43,8 +43,13 @@ export default function Assistant() {
   // Keep track of the raw conversation history for the Claude API
   const [conversationHistory, setConversationHistory] = useState<Anthropic.MessageParam[]>([]);
 
+  // Scroll only the conversation panel. scrollIntoView also scrolled the page,
+  // which on phones pushed the assistant's greeting up under the header.
   const scrollToBottom = () => {
-    messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
+    const panel = messagesEndRef.current?.parentElement;
+    if (!panel) return;
+    const reduce = window.matchMedia?.('(prefers-reduced-motion: reduce)').matches;
+    panel.scrollTo({ top: panel.scrollHeight, behavior: reduce ? 'auto' : 'smooth' });
   };
 
   useEffect(() => {
@@ -162,7 +167,7 @@ export default function Assistant() {
   };
 
   return (
-    <div className="max-w-4xl mx-auto h-[calc(100vh-137px)] md:h-[calc(100vh-153px)] lg:h-[calc(100vh-161px)] flex flex-col bg-white rounded-3xl border border-stone-100 shadow-[0_2px_8px_rgba(0,0,0,0.04)] overflow-hidden">
+    <div className="max-w-4xl mx-auto h-[calc(100dvh-var(--app-header-h)-4rem)] md:h-[calc(100dvh-var(--app-header-h)-5rem)] lg:h-[calc(100dvh-var(--app-header-h)-5.5rem)] flex flex-col bg-white rounded-3xl border border-stone-100 shadow-[0_2px_8px_rgba(0,0,0,0.04)] overflow-hidden">
       <div className="bg-emerald-700 text-white p-6 flex items-center gap-4 shrink-0">
         <div className="bg-emerald-600 p-3 rounded-2xl">
           <Bot className="w-7 h-7" />
@@ -173,7 +178,7 @@ export default function Assistant() {
         </div>
       </div>
 
-      <div className="flex-1 overflow-y-auto p-6 space-y-6 bg-stone-50">
+      <div role="log" aria-label="Conversation" tabIndex={0} className="flex-1 overflow-y-auto p-6 space-y-6 bg-stone-50 focus-visible:outline-2 focus-visible:-outline-offset-2 focus-visible:outline-emerald-600">
         {configured === false && (
           <div className="bg-amber-50 border border-amber-200 rounded-2xl p-5 flex items-start gap-3">
             <AlertTriangle className="w-5 h-5 text-amber-600 shrink-0 mt-0.5" />
@@ -253,7 +258,7 @@ export default function Assistant() {
                 key={prompt}
                 type="button"
                 onClick={() => sendMessage(prompt)}
-                className="text-sm font-medium bg-emerald-50 text-emerald-700 border border-emerald-100 px-4 py-2 rounded-full hover:bg-emerald-100 transition-colors"
+                className="min-h-11 text-sm font-medium bg-emerald-50 text-emerald-800 border border-emerald-100 px-4 py-2 rounded-full hover:bg-emerald-100 transition-colors"
               >
                 {prompt}
               </button>
@@ -266,15 +271,17 @@ export default function Assistant() {
             value={input}
             onChange={(e) => setInput(e.target.value)}
             placeholder={configured === false ? "AI assistant is not configured" : "Type your message here..."}
-            className="flex-1 bg-stone-50 border border-stone-200 rounded-full pl-6 pr-16 py-4 focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:border-transparent shadow-sm font-medium text-stone-800 placeholder:text-stone-400"
+            aria-label="Message the assistant"
+            className="flex-1 min-w-0 bg-stone-50 border border-stone-200 rounded-full pl-6 pr-16 py-4 focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:border-transparent shadow-sm font-medium text-stone-800 placeholder:text-stone-500"
             disabled={isLoading || configured === false}
           />
           <button
             type="submit"
             disabled={!input.trim() || isLoading || configured === false}
+            aria-label="Send message"
             className="absolute right-2.5 top-1/2 -translate-y-1/2 w-11 h-11 rounded-full bg-emerald-600 text-white flex items-center justify-center hover:bg-emerald-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors shadow-sm"
           >
-            <Send className="w-5 h-5 ml-0.5" />
+            <Send className="w-5 h-5 ml-0.5" aria-hidden="true" />
           </button>
         </form>
       </div>

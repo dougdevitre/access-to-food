@@ -261,7 +261,7 @@ export default function Volunteer() {
   return (
     <div className="max-w-4xl mx-auto space-y-6 relative">
       {notification && (
-        <div className="fixed top-4 right-4 bg-emerald-600 text-white px-6 py-3 rounded-xl shadow-lg font-medium flex items-center gap-2 z-50 animate-in fade-in slide-in-from-top-4">
+        <div role="status" className="fixed top-[calc(var(--app-sticky-h,var(--app-header-h))+1rem)] right-4 bg-emerald-700 text-white px-6 py-3 rounded-xl shadow-lg font-medium flex items-center gap-2 z-50 animate-in fade-in slide-in-from-top-4">
           <CheckCircle2 className="w-5 h-5" />
           {notification}
         </div>
@@ -275,24 +275,27 @@ export default function Volunteer() {
       <div className="flex p-1 bg-stone-200/80 rounded-2xl w-full overflow-x-auto hide-scrollbar">
         <button
           onClick={() => setActiveTab('search')}
-          className={`whitespace-nowrap flex-1 min-w-max px-4 py-2.5 text-sm font-bold rounded-xl transition-all ${
-            activeTab === 'search' ? 'bg-white text-stone-800 shadow-sm' : 'text-stone-500 hover:text-stone-700'
+          aria-pressed={activeTab === 'search'}
+          className={`whitespace-nowrap flex-1 min-w-max min-h-11 px-4 py-2.5 text-sm font-bold rounded-xl transition-all ${
+            activeTab === 'search' ? 'bg-white text-stone-800 shadow-sm' : 'text-stone-600 hover:text-stone-800'
           }`}
         >
           Find Shifts
         </button>
         <button
           onClick={() => setActiveTab('upcoming')}
-          className={`whitespace-nowrap flex-1 min-w-max px-4 py-2.5 text-sm font-bold rounded-xl transition-all ${
-            activeTab === 'upcoming' ? 'bg-white text-stone-800 shadow-sm' : 'text-stone-500 hover:text-stone-700'
+          aria-pressed={activeTab === 'upcoming'}
+          className={`whitespace-nowrap flex-1 min-w-max min-h-11 px-4 py-2.5 text-sm font-bold rounded-xl transition-all ${
+            activeTab === 'upcoming' ? 'bg-white text-stone-800 shadow-sm' : 'text-stone-600 hover:text-stone-800'
           }`}
         >
           My Schedule {myShifts.length > 0 && <span className="ml-1 bg-emerald-100 text-emerald-700 px-2 py-0.5 rounded-full text-xs">{myShifts.length}</span>}
         </button>
         <button
           onClick={() => setActiveTab('log')}
-          className={`whitespace-nowrap flex-1 min-w-max px-4 py-2.5 text-sm font-bold rounded-xl transition-all ${
-            activeTab === 'log' ? 'bg-white text-stone-800 shadow-sm' : 'text-stone-500 hover:text-stone-700'
+          aria-pressed={activeTab === 'log'}
+          className={`whitespace-nowrap flex-1 min-w-max min-h-11 px-4 py-2.5 text-sm font-bold rounded-xl transition-all ${
+            activeTab === 'log' ? 'bg-white text-stone-800 shadow-sm' : 'text-stone-600 hover:text-stone-800'
           }`}
         >
           Log Hours
@@ -309,7 +312,8 @@ export default function Volunteer() {
                 placeholder="Search for events or locations..." 
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
-                className="w-full pl-10 pr-4 py-2 rounded-full border border-stone-300 focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:border-transparent shadow-sm"
+                aria-label="Search shifts"
+                className="w-full min-h-11 pl-10 pr-4 py-2 rounded-full border border-stone-300 focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:border-transparent shadow-sm"
               />
             </div>
 
@@ -317,8 +321,9 @@ export default function Volunteer() {
               <div className="flex bg-stone-100 p-1 rounded-full">
                 <button
                   onClick={() => setViewMode('list')}
-                  className={`flex items-center gap-2 px-4 py-1.5 rounded-full text-sm font-medium transition-colors ${
-                    viewMode === 'list' ? 'bg-white text-stone-800 shadow-sm' : 'text-stone-500 hover:text-stone-700'
+                  aria-pressed={viewMode === 'list'}
+                  className={`flex min-h-11 items-center gap-2 px-4 rounded-full text-sm font-medium transition-colors ${
+                    viewMode === 'list' ? 'bg-white text-stone-800 shadow-sm' : 'text-stone-600 hover:text-stone-800'
                   }`}
                 >
                   <List className="w-4 h-4" />
@@ -326,8 +331,9 @@ export default function Volunteer() {
                 </button>
                 <button
                   onClick={() => setViewMode('map')}
-                  className={`flex items-center gap-2 px-4 py-1.5 rounded-full text-sm font-medium transition-colors ${
-                    viewMode === 'map' ? 'bg-white text-stone-800 shadow-sm' : 'text-stone-500 hover:text-stone-700'
+                  aria-pressed={viewMode === 'map'}
+                  className={`flex min-h-11 items-center gap-2 px-4 rounded-full text-sm font-medium transition-colors ${
+                    viewMode === 'map' ? 'bg-white text-stone-800 shadow-sm' : 'text-stone-600 hover:text-stone-800'
                   }`}
                 >
                   <MapIcon className="w-4 h-4" />
@@ -338,7 +344,7 @@ export default function Volunteer() {
               <button
                 onClick={handleGetLocation}
                 disabled={isLocating}
-                className={`flex items-center justify-center gap-2 px-4 py-2 rounded-full border transition-colors ${
+                className={`flex min-h-11 items-center justify-center gap-2 px-4 py-2 rounded-full border transition-colors ${
                   userLocation 
                     ? 'bg-emerald-50 border-emerald-200 text-emerald-700' 
                     : 'bg-white border-stone-300 text-stone-700 hover:bg-stone-50'
@@ -378,7 +384,7 @@ export default function Volunteer() {
                       </div>
                     )}
                     <div className="space-y-3">
-                      <h3 className="font-semibold text-xl text-stone-800">{shift.event_name}</h3>
+                      <h2 className="font-semibold text-xl text-stone-800">{shift.event_name}</h2>
                       <div className="flex flex-col sm:flex-row sm:items-center gap-3 sm:gap-5 text-sm text-stone-600">
                         <div className="flex items-center gap-2">
                           <Calendar className="w-4 h-4 text-stone-400" />
@@ -418,7 +424,7 @@ export default function Volunteer() {
           {upcomingShifts.length === 0 ? (
             <div className="bg-white rounded-3xl p-10 border border-stone-100 shadow-[0_2px_8px_rgba(0,0,0,0.04)] text-center">
               <Calendar className="w-12 h-12 text-stone-300 mx-auto mb-4" />
-              <h3 className="text-xl font-semibold text-stone-800 mb-2">No upcoming shifts</h3>
+              <h2 className="text-xl font-semibold text-stone-800 mb-2">No upcoming shifts</h2>
               <p className="text-stone-500 mb-8">You haven't signed up for any upcoming volunteer shifts.</p>
               <button 
                 onClick={() => setActiveTab('search')}
@@ -432,7 +438,7 @@ export default function Volunteer() {
               <div key={shift.event_id} className="bg-white rounded-3xl p-6 border border-stone-100 shadow-[0_2px_8px_rgba(0,0,0,0.04)] border-l-4 border-l-emerald-500">
                 <div className="flex flex-col md:flex-row md:items-start justify-between gap-6 mb-6">
                   <div className="space-y-3">
-                    <h3 className="font-semibold text-xl text-stone-800">{shift.event_name}</h3>
+                    <h2 className="font-semibold text-xl text-stone-800">{shift.event_name}</h2>
                     <div className="flex flex-col sm:flex-row sm:items-center gap-3 sm:gap-5 text-sm text-stone-600">
                       <div className="flex items-center gap-2 font-medium text-stone-800">
                         <Calendar className="w-4 h-4 text-emerald-600" />
@@ -480,12 +486,12 @@ export default function Volunteer() {
 
       {activeTab === 'log' && (
         <div className="bg-white rounded-3xl p-8 border border-stone-100 shadow-[0_2px_8px_rgba(0,0,0,0.04)] max-w-xl mx-auto">
-          <h3 className="text-xl font-semibold text-stone-800 mb-6">Log Volunteer Hours</h3>
+          <h2 className="text-xl font-semibold text-stone-800 mb-6">Log Volunteer Hours</h2>
           
           <form className="space-y-6" onSubmit={(e) => { e.preventDefault(); showNotification('Hours logged successfully!'); }}>
             <div>
-              <label className="block text-sm font-medium text-stone-700 mb-2">Select Shift</label>
-              <select className="w-full border border-stone-200 rounded-xl px-4 py-3 focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:border-transparent bg-stone-50 hover:bg-stone-100 transition-colors cursor-pointer">
+              <label htmlFor="log-shift" className="block text-sm font-medium text-stone-700 mb-2">Select Shift</label>
+              <select id="log-shift" className="w-full border border-stone-200 rounded-xl px-4 py-3 focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:border-transparent bg-stone-50 hover:bg-stone-100 transition-colors cursor-pointer">
                 <option value="">Select a past shift...</option>
                 <option value="1">Mobile Market - Mar 10, 2026</option>
                 <option value="2">Pantry Sorting - Mar 12, 2026</option>
@@ -502,12 +508,13 @@ export default function Volunteer() {
             </div>
 
             <div>
-              <label className="block text-sm font-medium text-stone-700 mb-2">Hours Completed</label>
+              <label htmlFor="log-hours" className="block text-sm font-medium text-stone-700 mb-2">Hours Completed</label>
               <div className="relative">
                 <Clock className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-stone-400" />
-                <input 
-                  type="number" 
-                  min="0.5" 
+                <input
+                  id="log-hours"
+                  type="number"
+                  min="0.5"
                   step="0.5" 
                   placeholder="e.g. 2.5" 
                   required
@@ -526,15 +533,18 @@ export default function Volunteer() {
                   <button 
                     type="button"
                     onClick={() => setPhoto(null)}
-                    className="absolute top-3 right-3 bg-stone-900/60 text-white px-4 py-1.5 rounded-full text-xs font-medium backdrop-blur-md hover:bg-stone-900/80 transition-colors"
+                    className="absolute top-3 right-3 inline-flex min-h-11 items-center bg-stone-900/60 text-white px-4 rounded-full text-xs font-medium backdrop-blur-md hover:bg-stone-900/80 transition-colors"
                   >
                     Remove
                   </button>
                 </div>
               ) : (
-                <div 
+                <div
+                  role="button"
+                  tabIndex={0}
+                  onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); fileInputRef.current?.click(); } }}
                   onClick={() => fileInputRef.current?.click()}
-                  className="border-2 border-dashed border-stone-200 rounded-2xl p-10 text-center cursor-pointer hover:bg-stone-50 hover:border-emerald-400 transition-colors"
+                  className="border-2 border-dashed border-stone-200 rounded-2xl p-6 sm:p-10 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-emerald-600 text-center cursor-pointer hover:bg-stone-50 hover:border-emerald-400 transition-colors"
                 >
                   <Camera className="w-10 h-10 text-stone-300 mx-auto mb-3" />
                   <span className="text-sm font-medium text-emerald-700">Tap to take photo</span>

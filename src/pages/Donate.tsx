@@ -66,16 +66,18 @@ export default function Donate() {
       <div className="flex p-1.5 bg-stone-100 rounded-2xl w-full md:w-fit shadow-inner">
         <button
           onClick={() => setActiveTab('monetary')}
-          className={`flex-1 md:px-10 py-2.5 text-sm font-semibold rounded-xl transition-all ${
-            activeTab === 'monetary' ? 'bg-white text-stone-800 shadow-[0_2px_8px_rgba(0,0,0,0.04)]' : 'text-stone-500 hover:text-stone-700'
+          aria-pressed={activeTab === 'monetary'}
+          className={`flex-1 min-h-11 md:px-10 py-2.5 text-sm font-semibold rounded-xl transition-all ${
+            activeTab === 'monetary' ? 'bg-white text-stone-800 shadow-[0_2px_8px_rgba(0,0,0,0.04)]' : 'text-stone-600 hover:text-stone-800'
           }`}
         >
           Give Funds
         </button>
         <button
           onClick={() => setActiveTab('food')}
-          className={`flex-1 md:px-10 py-2.5 text-sm font-semibold rounded-xl transition-all ${
-            activeTab === 'food' ? 'bg-white text-stone-800 shadow-[0_2px_8px_rgba(0,0,0,0.04)]' : 'text-stone-500 hover:text-stone-700'
+          aria-pressed={activeTab === 'food'}
+          className={`flex-1 min-h-11 md:px-10 py-2.5 text-sm font-semibold rounded-xl transition-all ${
+            activeTab === 'food' ? 'bg-white text-stone-800 shadow-[0_2px_8px_rgba(0,0,0,0.04)]' : 'text-stone-600 hover:text-stone-800'
           }`}
         >
           Donate Food
@@ -84,14 +86,15 @@ export default function Donate() {
 
       {activeTab === 'monetary' ? (
         <div className="grid md:grid-cols-2 gap-8">
-          <div className="bg-white rounded-3xl p-8 border border-stone-100 shadow-[0_2px_8px_rgba(0,0,0,0.04)]">
-            <h3 className="text-xl font-semibold text-stone-800 mb-6">Make a Financial Gift</h3>
+          <div className="bg-white rounded-3xl p-5 sm:p-8 border border-stone-100 shadow-[0_2px_8px_rgba(0,0,0,0.04)]">
+            <h2 className="text-xl font-semibold text-stone-800 mb-6">Make a Financial Gift</h2>
             
-            <div className="grid grid-cols-3 gap-4 mb-8">
+            <div className="grid grid-cols-3 gap-2 sm:gap-4 mb-8">
               {[10, 25, 50, 100, 250, 500].map((val) => (
                 <button
                   key={val}
                   onClick={() => setAmount(val)}
+                  aria-pressed={amount === val}
                   className={`py-3.5 rounded-2xl font-semibold border-2 transition-all ${
                     amount === val 
                       ? 'bg-emerald-50 border-emerald-500 text-emerald-700 shadow-sm' 
@@ -104,11 +107,12 @@ export default function Donate() {
             </div>
 
             <div className="mb-8">
-              <label className="block text-sm font-medium text-stone-700 mb-2">Custom Amount</label>
+              <label htmlFor="custom-amount" className="block text-sm font-medium text-stone-700 mb-2">Custom Amount</label>
               <div className="relative">
                 <span className="absolute left-4 top-1/2 -translate-y-1/2 text-stone-500 font-medium">$</span>
-                <input 
-                  type="number" 
+                <input
+                  id="custom-amount"
+                  type="number"
                   value={amount}
                   onChange={(e) => setAmount(Number(e.target.value))}
                   className="w-full pl-8 pr-4 py-3.5 border border-stone-200 rounded-2xl focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:border-transparent font-semibold text-lg bg-stone-50 hover:bg-stone-100 transition-colors"
@@ -119,7 +123,7 @@ export default function Donate() {
             {donationSubmitted ? (
               <div className="bg-emerald-50 border border-emerald-200 rounded-2xl p-6 text-center space-y-3 animate-in fade-in duration-300">
                 <CheckCircle2 className="w-10 h-10 text-emerald-600 mx-auto" />
-                <h4 className="font-bold text-emerald-800 text-lg">Thank you for your gift!</h4>
+                <h3 className="font-bold text-emerald-800 text-lg">Thank you for your gift!</h3>
                 <p className="text-emerald-700 text-sm font-medium">
                   Your ${amount} donation will provide approximately ${(amount * 6).toLocaleString()} in food and services. A confirmation receipt will be sent to your email.
                 </p>
@@ -141,13 +145,13 @@ export default function Donate() {
             )}
           </div>
 
-          <div className="bg-emerald-50 rounded-3xl p-8 border border-emerald-100 flex flex-col justify-center text-center shadow-[0_2px_8px_rgba(0,0,0,0.04)]">
+          <div className="bg-emerald-50 rounded-3xl p-5 sm:p-8 border border-emerald-100 flex flex-col justify-center text-center shadow-[0_2px_8px_rgba(0,0,0,0.04)]">
             <Utensils className="w-16 h-16 text-emerald-600 mx-auto mb-6" />
-            <h3 className="text-2xl font-bold text-emerald-800 mb-3">Donation Calculator</h3>
+            <h2 className="text-2xl font-bold text-emerald-800 mb-3">Donation Calculator</h2>
             <p className="text-emerald-700 mb-8 font-medium">
               Because of our wholesale purchasing power, every $1 donated helps provide $6 in food and services to neighbors in need.
             </p>
-            <div className="bg-white rounded-2xl p-8 shadow-sm border border-emerald-100">
+            <div className="bg-white rounded-2xl p-5 sm:p-8 shadow-sm border border-emerald-100">
               <span className="block text-sm font-bold text-stone-500 uppercase tracking-wider mb-2">You will provide</span>
               <span className="block text-6xl font-black text-emerald-600 tracking-tight">${(amount * 6).toLocaleString()}</span>
               <span className="block text-xl font-semibold text-stone-600 mt-2">in Food & Services</span>
@@ -156,8 +160,8 @@ export default function Donate() {
         </div>
       ) : (
         <div className="grid md:grid-cols-2 gap-8">
-          <div className="bg-white rounded-3xl p-8 border border-stone-100 shadow-[0_2px_8px_rgba(0,0,0,0.04)]">
-            <h3 className="text-xl font-semibold text-stone-800 mb-4">Log a Food Donation</h3>
+          <div className="bg-white rounded-3xl p-5 sm:p-8 border border-stone-100 shadow-[0_2px_8px_rgba(0,0,0,0.04)]">
+            <h2 className="text-xl font-semibold text-stone-800 mb-4">Log a Food Donation</h2>
             <p className="text-stone-600 mb-8 text-sm font-medium">
               Did you drop off food at a partner pantry or host a food drive? Log it here to track your impact and get a receipt for your records.
             </p>
@@ -165,7 +169,7 @@ export default function Donate() {
             {foodDonationSubmitted && (
               <div className="bg-emerald-50 border border-emerald-200 rounded-2xl p-6 text-center space-y-3 mb-6 animate-in fade-in duration-300">
                 <CheckCircle2 className="w-10 h-10 text-emerald-600 mx-auto" />
-                <h4 className="font-bold text-emerald-800 text-lg">Donation recorded!</h4>
+                <h3 className="font-bold text-emerald-800 text-lg">Donation recorded!</h3>
                 <p className="text-emerald-700 text-sm font-medium">
                   Thank you for your food donation. Your contribution makes a real difference in our community.
                 </p>
@@ -179,8 +183,8 @@ export default function Donate() {
             )}
             <form className="space-y-6" onSubmit={(e) => { e.preventDefault(); setFoodDonationSubmitted(true); }} style={{ display: foodDonationSubmitted ? 'none' : undefined }}>
               <div>
-                <label className="block text-sm font-medium text-stone-700 mb-2">Drop-off Location</label>
-                <select className="w-full border border-stone-200 rounded-xl px-4 py-3 focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:border-transparent bg-stone-50 hover:bg-stone-100 transition-colors cursor-pointer">
+                <label htmlFor="dropoff-location" className="block text-sm font-medium text-stone-700 mb-2">Drop-off Location</label>
+                <select id="dropoff-location" className="w-full border border-stone-200 rounded-xl px-4 py-3 focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:border-transparent bg-stone-50 hover:bg-stone-100 transition-colors cursor-pointer">
                   <option value="">Select a location...</option>
                   <option value="1">access-to-food HQ</option>
                   <option value="2">Partner Agency</option>
@@ -188,8 +192,9 @@ export default function Donate() {
               </div>
 
               <div>
-                <label className="block text-sm font-medium text-stone-700 mb-2">Estimated Weight (lbs)</label>
+                <label htmlFor="donation-weight" className="block text-sm font-medium text-stone-700 mb-2">Estimated Weight (lbs)</label>
                 <input 
+                  id="donation-weight"
                   type="number" 
                   placeholder="e.g. 50" 
                   className="w-full px-4 py-3 border border-stone-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:border-transparent bg-stone-50 hover:bg-stone-100 transition-colors"
@@ -206,18 +211,21 @@ export default function Donate() {
                     <button 
                       type="button"
                       onClick={() => setPhoto(null)}
-                      className="absolute top-3 right-3 bg-stone-900/60 text-white px-4 py-1.5 rounded-full text-xs font-medium backdrop-blur-md hover:bg-stone-900/80 transition-colors"
+                      className="absolute top-3 right-3 inline-flex min-h-11 items-center bg-stone-900/60 text-white px-4 rounded-full text-xs font-medium backdrop-blur-md hover:bg-stone-900/80 transition-colors"
                     >
                       Remove
                     </button>
                   </div>
                 ) : (
-                  <div 
+                  <div
+                    role="button"
+                    tabIndex={0}
+                    onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); fileInputRef.current?.click(); } }}
                     onClick={() => fileInputRef.current?.click()}
                     onDragOver={handleDragOver}
                     onDragLeave={handleDragLeave}
                     onDrop={handleDrop}
-                    className={`border-2 border-dashed rounded-2xl p-10 text-center cursor-pointer transition-all ${
+                    className={`border-2 border-dashed rounded-2xl p-6 sm:p-10 text-center cursor-pointer focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-emerald-600 transition-all ${
                       isDragging 
                         ? 'border-emerald-500 bg-emerald-50' 
                         : 'border-stone-200 hover:bg-stone-50 hover:border-emerald-400'
@@ -249,31 +257,33 @@ export default function Donate() {
             </form>
           </div>
 
-          <div className="bg-amber-50 rounded-3xl p-8 border border-amber-100 flex flex-col justify-center shadow-[0_2px_8px_rgba(0,0,0,0.04)]">
+          <div className="bg-amber-50 rounded-3xl p-5 sm:p-8 border border-amber-100 flex flex-col justify-center shadow-[0_2px_8px_rgba(0,0,0,0.04)]">
             <Calculator className="w-12 h-12 text-amber-600 mb-6" />
-            <h3 className="text-2xl font-bold text-amber-800 mb-3">Food Drive Calculator</h3>
+            <h2 className="text-2xl font-bold text-amber-800 mb-3">Food Drive Calculator</h2>
             <p className="text-amber-700 mb-8 text-sm font-medium">
               Planning a food drive? Estimate how many items you can collect based on your participants.
             </p>
             
             <div className="space-y-6 mb-8">
               <div>
-                <label className="block text-sm font-medium text-amber-800 mb-2 flex items-center gap-2">
-                  <Users className="w-4 h-4" /> Number of Participants
+                <label htmlFor="drive-participants" className="block text-sm font-medium text-amber-800 mb-2 flex items-center gap-2">
+                  <Users className="w-4 h-4" aria-hidden="true" /> Number of Participants
                 </label>
-                <input 
-                  type="number" 
+                <input
+                  id="drive-participants"
+                  type="number"
                   value={participants}
                   onChange={(e) => setParticipants(Number(e.target.value))}
                   className="w-full px-4 py-3 border border-amber-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-amber-500 focus:border-transparent bg-white shadow-sm"
                 />
               </div>
               <div>
-                <label className="block text-sm font-medium text-amber-800 mb-2 flex items-center gap-2">
-                  <Package className="w-4 h-4" /> Items per Participant
+                <label htmlFor="drive-items" className="block text-sm font-medium text-amber-800 mb-2 flex items-center gap-2">
+                  <Package className="w-4 h-4" aria-hidden="true" /> Items per Participant
                 </label>
-                <input 
-                  type="number" 
+                <input
+                  id="drive-items"
+                  type="number"
                   value={itemsPerParticipant}
                   onChange={(e) => setItemsPerParticipant(Number(e.target.value))}
                   className="w-full px-4 py-3 border border-amber-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-amber-500 focus:border-transparent bg-white shadow-sm"
@@ -281,7 +291,7 @@ export default function Donate() {
               </div>
             </div>
 
-            <div className="bg-white rounded-2xl p-8 shadow-sm border border-amber-200 text-center">
+            <div className="bg-white rounded-2xl p-5 sm:p-8 shadow-sm border border-amber-200 text-center">
               <span className="block text-sm font-bold text-stone-500 uppercase tracking-wider mb-2">Estimated Collection</span>
               <span className="block text-6xl font-black text-amber-600 tracking-tight">{estimatedItems.toLocaleString()}</span>
               <span className="block text-xl font-semibold text-stone-600 mt-2">Items</span>

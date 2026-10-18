@@ -10,6 +10,14 @@ export const DISCLAIMER_URL =
 export const SHORT_NOTICE =
   `Educational information only. ${PROJECT_TITLE} is not legal, medical, mental health, financial or safety advice, and using it creates no professional relationship. In danger now? Call 911. For crisis support, call or text 988. Confirm anything important with the official source or a licensed professional.`;
 
+// The slim bar pinned to the top of every route, so emergency numbers stay in
+// view without scrolling to the footer notice. Each part is one tel: link.
+export const EMERGENCY_BAR_LABEL = 'Emergency help';
+export const EMERGENCY_LINKS: ReadonlyArray<{ text: string; number: string }> = [
+  { text: 'In danger? Call 911', number: '911' },
+  { text: 'Crisis: call or text 988', number: '988' },
+];
+
 // Each point is a bold lead (may be empty) followed by its body.
 export const FULL_DISCLAIMER: ReadonlyArray<{ lead: string; body: string }> = [
   {

@@ -200,8 +200,9 @@ export default function Pantries() {
           <div className="flex bg-stone-100 p-1 rounded-full">
             <button
               onClick={() => setViewMode('list')}
-              className={`flex items-center gap-2 px-4 py-1.5 rounded-full text-sm font-medium transition-colors ${
-                viewMode === 'list' ? 'bg-white text-stone-800 shadow-sm' : 'text-stone-500 hover:text-stone-700'
+              aria-pressed={viewMode === 'list'}
+              className={`flex min-h-11 items-center gap-2 px-4 rounded-full text-sm font-medium transition-colors ${
+                viewMode === 'list' ? 'bg-white text-stone-800 shadow-sm' : 'text-stone-600 hover:text-stone-800'
               }`}
             >
               <List className="w-4 h-4" />
@@ -209,8 +210,9 @@ export default function Pantries() {
             </button>
             <button
               onClick={() => setViewMode('map')}
-              className={`flex items-center gap-2 px-4 py-1.5 rounded-full text-sm font-medium transition-colors ${
-                viewMode === 'map' ? 'bg-white text-stone-800 shadow-sm' : 'text-stone-500 hover:text-stone-700'
+              aria-pressed={viewMode === 'map'}
+              className={`flex min-h-11 items-center gap-2 px-4 rounded-full text-sm font-medium transition-colors ${
+                viewMode === 'map' ? 'bg-white text-stone-800 shadow-sm' : 'text-stone-600 hover:text-stone-800'
               }`}
             >
               <MapIcon className="w-4 h-4" />
@@ -221,7 +223,7 @@ export default function Pantries() {
           <button
             onClick={handleGetLocation}
             disabled={isLocating}
-            className={`flex items-center justify-center gap-2 px-4 py-2 rounded-full border transition-colors ${
+            className={`flex min-h-11 items-center justify-center gap-2 px-4 py-2 rounded-full border transition-colors ${
               userLocation 
                 ? 'bg-emerald-50 border-emerald-200 text-emerald-700' 
                 : 'bg-white border-stone-300 text-stone-700 hover:bg-stone-50'
@@ -240,7 +242,8 @@ export default function Pantries() {
               placeholder="Search by name, zip, or county..." 
               value={search}
               onChange={(e) => setSearch(e.target.value)}
-              className="w-full sm:w-64 pl-10 pr-4 py-2 rounded-full border border-stone-300 focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:border-transparent"
+              aria-label="Search partner agencies"
+              className="w-full sm:w-64 min-h-11 pl-10 pr-4 py-2 rounded-full border border-stone-300 focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:border-transparent"
             />
           </div>
         </div>
@@ -265,7 +268,7 @@ export default function Pantries() {
       ) : filteredPantries.length === 0 ? (
         <div className="text-center py-12 bg-white rounded-2xl border border-stone-200">
           <AlertCircle className="w-12 h-12 text-stone-400 mx-auto mb-3" />
-          <h3 className="text-lg font-medium text-stone-800">No agencies found</h3>
+          <h2 className="text-lg font-medium text-stone-800">No agencies found</h2>
           <p className="text-stone-500">Try adjusting your search terms.</p>
         </div>
       ) : viewMode === 'map' ? (
@@ -287,7 +290,7 @@ export default function Pantries() {
                   </div>
                 )}
                 <div className="flex justify-between items-start mb-4 gap-3 pr-14">
-                  <h3 className="font-semibold text-xl text-stone-800 leading-tight">{displayName}</h3>
+                  <h2 className="font-semibold text-xl text-stone-800 leading-tight">{displayName}</h2>
                   {pantry.inventoryStatus && (
                     <span className={`shrink-0 text-[10px] font-bold uppercase tracking-wider px-2.5 py-1 rounded-lg border ${getStatusColor(pantry.inventoryStatus)}`}>
                       {pantry.inventoryStatus}
@@ -300,7 +303,7 @@ export default function Pantries() {
                     <MapPin className="w-4 h-4 mt-0.5 shrink-0 text-stone-400" />
                     <div>
                       <p className="font-medium text-stone-700">{fullAddress}</p>
-                      {pantry.county && <p className="text-xs text-stone-400 mt-0.5">{pantry.county} County</p>}
+                      {pantry.county && <p className="text-xs text-stone-500 mt-0.5">{pantry.county} County</p>}
                     </div>
                   </div>
                   

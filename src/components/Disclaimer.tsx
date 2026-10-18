@@ -3,6 +3,8 @@ import { useLocation } from 'react-router-dom';
 import { Info } from 'lucide-react';
 import {
   DISCLAIMER_URL,
+  EMERGENCY_BAR_LABEL,
+  EMERGENCY_LINKS,
   FULL_DISCLAIMER,
   PROJECT_TITLE,
   SHORT_NOTICE,
@@ -12,7 +14,7 @@ import {
 } from '../lib/disclaimer';
 
 const linkClass =
-  'font-semibold text-emerald-800 underline underline-offset-2 hover:text-emerald-900 dark:text-emerald-300 dark:hover:text-emerald-200 rounded focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-emerald-600';
+  'font-semibold text-emerald-800 underline underline-offset-2 hover:text-emerald-900 rounded focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-emerald-600';
 
 // Turns "911" and "988" in a sentence into tel: links without changing the
 // wording. The ::after box widens each tap target to at least 44px without
@@ -35,15 +37,43 @@ function withEmergencyLinks(text: string): ReactNode[] {
   });
 }
 
+// Slim, non-dismissable bar at the top of every route. It sits inside the
+// sticky header group (see Layout), so it never covers page content, and its
+// padding follows the safe-area insets on notched phones. Below 360px the text
+// steps down one size so both links stay on one 44px row.
+export function EmergencyBar() {
+  return (
+    <div
+      role="region"
+      aria-label={EMERGENCY_BAR_LABEL}
+      className="border-b border-rose-100 bg-rose-50 pt-[env(safe-area-inset-top)] pr-[max(1rem,env(safe-area-inset-right))] pl-[max(1rem,env(safe-area-inset-left))] text-rose-900"
+    >
+      <p className="mx-auto flex max-w-7xl flex-wrap items-center justify-center gap-x-2 text-xs font-semibold min-[360px]:text-sm">
+        {EMERGENCY_LINKS.map(({ text, number }, i) => (
+          <span key={number} className="contents">
+            {i > 0 && <span aria-hidden="true" className="text-rose-400"> · </span>}
+            <a
+              href={`tel:${number}`}
+              className="inline-flex min-h-11 items-center rounded px-1 underline decoration-rose-300 underline-offset-2 hover:text-rose-950 hover:decoration-rose-700 focus-visible:outline-2 focus-visible:outline-offset-[-2px] focus-visible:outline-rose-700"
+            >
+              {text}
+            </a>
+          </span>
+        ))}
+      </p>
+    </div>
+  );
+}
+
 // Persistent short notice, shown at the foot of every page.
 export function DisclaimerNotice() {
   return (
     <footer
       aria-label="Disclaimer"
-      className="border-t border-stone-200 bg-white text-stone-600 dark:border-stone-700 dark:bg-stone-900 dark:text-stone-300"
+      className="border-t border-stone-200 bg-white text-stone-600"
     >
       <div className="mx-auto flex max-w-7xl gap-3 px-4 py-5 md:px-8">
-        <Info className="mt-0.5 h-5 w-5 shrink-0 text-stone-400 dark:text-stone-500" aria-hidden="true" />
+        <Info className="mt-0.5 h-5 w-5 shrink-0 text-stone-400" aria-hidden="true" />
         <p className="text-sm leading-relaxed">
           {withEmergencyLinks(SHORT_NOTICE)}{' '}
           <a
@@ -144,26 +174,26 @@ export function DisclaimerAcknowledgment() {
         aria-describedby="disclaimer-intro"
         tabIndex={-1}
         onKeyDown={onKeyDown}
-        className="max-h-[calc(100dvh-2rem)] w-full max-w-lg overflow-y-auto rounded-3xl bg-white text-stone-700 shadow-xl outline-none focus-visible:ring-2 focus-visible:ring-emerald-600 dark:bg-stone-900 dark:text-stone-200"
+        className="max-h-[calc(100dvh-2rem)] w-full max-w-lg overflow-y-auto rounded-3xl bg-white text-stone-700 shadow-xl outline-none focus-visible:ring-2 focus-visible:ring-emerald-600"
       >
         <div className="space-y-4 p-6 sm:p-8">
-          <h2 id="disclaimer-title" className="text-xl font-bold text-stone-800 dark:text-stone-50">
+          <h2 id="disclaimer-title" className="text-xl font-bold text-stone-800">
             Before you use {PROJECT_TITLE}
           </h2>
-          <p id="disclaimer-intro" className="text-sm font-medium text-stone-500 dark:text-stone-400">
+          <p id="disclaimer-intro" className="text-sm font-medium text-stone-500">
             Please read this once. You can find it again at the bottom of every page.
           </p>
           <ul className="list-disc space-y-3 pl-5 text-sm leading-relaxed marker:text-stone-400">
             {FULL_DISCLAIMER.map(({ lead, body }) => (
               <li key={lead || 'intro'}>
-                {lead && <strong className="font-semibold text-stone-800 dark:text-stone-50">{lead} </strong>}
+                {lead && <strong className="font-semibold text-stone-800">{lead} </strong>}
                 {withEmergencyLinks(body)}
               </li>
             ))}
           </ul>
         </div>
-        <div className="sticky bottom-0 space-y-2 border-t border-stone-100 bg-white p-4 sm:px-8 dark:border-stone-700 dark:bg-stone-900">
-          <p aria-live="polite" className="text-xs text-stone-500 dark:text-stone-400">
+        <div className="sticky bottom-0 space-y-2 border-t border-stone-100 bg-white p-4 sm:px-8">
+          <p aria-live="polite" className="text-xs text-stone-500">
             {escPressed ? 'Select “I understand” to continue.' : ''}
           </p>
           <button
