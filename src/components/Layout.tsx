@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react';
 import { Outlet, Link, useLocation } from 'react-router-dom';
 import { Home, MapPin, Calendar, HeartHandshake, Gift, FileText, Info, Bot, Camera, Activity, Menu, X, Gamepad2 } from 'lucide-react';
 import { clsx } from 'clsx';
+import { DisclaimerAcknowledgment, DisclaimerNotice } from './Disclaimer';
 
 export default function Layout() {
   const location = useLocation();
@@ -164,6 +165,9 @@ export default function Layout() {
           </div>
         </main>
       </div>
+
+      <DisclaimerNotice />
+      <DisclaimerAcknowledgment />
     </div>
   );
 }
