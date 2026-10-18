@@ -2,6 +2,8 @@
 
 > A community platform connecting people with food resources in the St. Louis area — pantry locators, distribution events, SNAP guidance, an AI food-access assistant, and tools for volunteers and pantry staff. Part of the Access To initiative.
 
+> Part of **[Access To](https://dougdevitre.org)** — open-source tools for the access gaps that matter most. [See all projects →](https://dougdevitre.org/#pillars)
+
 [![MIT License](https://img.shields.io/badge/license-MIT-blue.svg)](LICENSE)
 
 **Live site:** https://food.cotrackpro.com
@@ -101,4 +103,4 @@ MIT — see [LICENSE](LICENSE) for details.
 
 ---
 
-Part of the [Access To](https://cotrackpro.com) civic tech initiative — open-source tools for community access to justice, health, housing, and services.
+Part of the [Access To](https://dougdevitre.org) civic tech initiative — open-source tools for community access to justice, health, housing, and services.
