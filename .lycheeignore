@@ -1,0 +1,25 @@
+# Exclusions for the Link check workflow (.github/workflows/link-check.yml).
+# One regular expression per line. Every entry says why it is skipped.
+
+# tel: and mailto: are phone numbers and email addresses, not web pages, so
+# there is nothing to fetch. (Also passed as --exclude in the workflow.)
+^tel:
+^mailto:
+
+# Firebase and Google API endpoints are called by the app's code, not followed
+# by people; they answer 4xx without a key or a request body.
+^https?://([a-z0-9-]+\.)*googleapis\.com
+^https?://([a-z0-9-]+\.)*firebaseio\.com
+^https?://([a-z0-9-]+\.)*firebaseapp\.com
+
+# "Get directions" links in Pantries.tsx and Events.tsx are templates
+# (https://maps.google.com/?q=${...}) filled with an address at runtime; the
+# scanner only sees the unfilled prefix.
+^https?://maps\.google\.com
+
+# Vercel preview and project hosts change with every deployment and are not
+# links shown to visitors.
+^https?://([a-z0-9-]+\.)*vercel\.app
+
+# The SVG XML namespace in index.html identifies a format; it is not a link.
+^https?://www\.w3\.org/2000/svg
