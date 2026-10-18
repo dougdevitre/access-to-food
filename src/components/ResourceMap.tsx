@@ -46,7 +46,7 @@ export default function ResourceMap({
         <p className="font-semibold text-stone-600">Map unavailable</p>
         <p className="text-sm text-stone-500 max-w-sm">
           The Google Maps API key is not configured. Set the{' '}
-          <code className="bg-stone-100 px-1.5 py-0.5 rounded text-xs font-mono">VITE_GOOGLE_MAPS_API_KEY</code>{' '}
+          <code className="bg-stone-100 text-stone-700 px-1.5 py-0.5 rounded text-xs font-mono">VITE_GOOGLE_MAPS_API_KEY</code>{' '}
           environment variable at build time to enable the map.
         </p>
       </div>

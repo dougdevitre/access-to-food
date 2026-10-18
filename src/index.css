@@ -1,6 +1,29 @@
 @import "tailwindcss";
 @plugin "@tailwindcss/typography";
 
+/* Height of the sticky emergency bar + header. Layout measures the real value
+   at runtime; this fallback matches one bar row (45px) plus the header (77px). */
+:root {
+  --app-header-h: 122px;
+}
+
+/* Keep focused and anchored content clear of the sticky header group. */
+html {
+  scroll-padding-top: var(--app-sticky-h, var(--app-header-h));
+}
+
+/* Respect "reduce motion": stop decorative animation and transitions. */
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
+}
+
 @layer utilities {
   .hide-scrollbar {
     -ms-overflow-style: none;  /* IE and Edge */

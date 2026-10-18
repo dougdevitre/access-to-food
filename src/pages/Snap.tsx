@@ -36,7 +36,7 @@ export default function Snap() {
           </div>
           <div className="text-center md:text-left">
             <h1 className="text-3xl md:text-4xl font-bold mb-3">SNAP Application Assistance</h1>
-            <p className="text-blue-100 text-lg font-medium">
+            <p className="text-white text-lg font-medium">
               Get help applying for the Supplemental Nutrition Assistance Program (food stamps).
             </p>
           </div>
@@ -55,8 +55,9 @@ export default function Snap() {
           
           <div className="space-y-6">
             <div>
-              <label className="block text-sm font-medium text-stone-700 mb-2">Household Size</label>
+              <label htmlFor="snap-household" className="block text-sm font-medium text-stone-700 mb-2">Household Size</label>
               <select 
+                id="snap-household"
                 value={householdSize}
                 onChange={(e) => {
                   setHouseholdSize(Number(e.target.value));
@@ -71,11 +72,12 @@ export default function Snap() {
             </div>
 
             <div>
-              <label className="block text-sm font-medium text-stone-700 mb-2">Gross Monthly Income</label>
+              <label htmlFor="snap-income" className="block text-sm font-medium text-stone-700 mb-2">Gross Monthly Income</label>
               <div className="relative">
                 <span className="absolute left-4 top-1/2 -translate-y-1/2 text-stone-500 font-medium">$</span>
-                <input 
-                  type="number" 
+                <input
+                  id="snap-income"
+                  type="number"
                   placeholder="Before taxes"
                   value={monthlyIncome}
                   onChange={(e) => {
@@ -104,9 +106,9 @@ export default function Snap() {
                     <AlertCircle className="w-6 h-6 text-amber-600 shrink-0 mt-0.5" />
                   )}
                   <div>
-                    <h4 className={`font-semibold text-lg ${isEligible ? 'text-emerald-800' : 'text-amber-800'}`}>
+                    <h3 className={`font-semibold text-lg ${isEligible ? 'text-emerald-800' : 'text-amber-800'}`}>
                       {isEligible ? 'You may be eligible!' : 'You may not meet standard limits.'}
-                    </h4>
+                    </h3>
                     <p className={`text-sm mt-1 ${isEligible ? 'text-emerald-700' : 'text-amber-700'}`}>
                       {isEligible 
                         ? 'Based on your inputs, you appear to meet the gross income limits. Contact us to start your application.' 
@@ -134,7 +136,7 @@ export default function Snap() {
             {callbackSubmitted ? (
               <div className="bg-emerald-50 border border-emerald-200 rounded-xl p-5 text-center space-y-2 animate-in fade-in duration-300">
                 <CheckCircle2 className="w-8 h-8 text-emerald-600 mx-auto" />
-                <h4 className="font-bold text-emerald-800">Request received!</h4>
+                <h3 className="font-bold text-emerald-800">Request received!</h3>
                 <p className="text-emerald-700 text-sm font-medium">
                   Our SNAP team will call you back within 1 business day.
                 </p>
@@ -149,8 +151,9 @@ export default function Snap() {
                 }}
               >
                 <div>
-                  <label className="block text-sm font-medium text-stone-700 mb-1">Your Name</label>
+                  <label htmlFor="callback-name" className="block text-sm font-medium text-stone-700 mb-1">Your Name</label>
                   <input
+                    id="callback-name"
                     type="text"
                     required
                     value={callbackName}
@@ -160,8 +163,9 @@ export default function Snap() {
                   />
                 </div>
                 <div>
-                  <label className="block text-sm font-medium text-stone-700 mb-1">Phone Number</label>
+                  <label htmlFor="callback-phone" className="block text-sm font-medium text-stone-700 mb-1">Phone Number</label>
                   <input
+                    id="callback-phone"
                     type="tel"
                     required
                     value={callbackPhone}
@@ -179,7 +183,7 @@ export default function Snap() {
                 <button
                   type="button"
                   onClick={() => setShowCallbackForm(false)}
-                  className="w-full text-stone-500 text-sm font-medium hover:text-stone-700 flex items-center justify-center gap-1"
+                  className="w-full min-h-11 text-stone-600 text-sm font-medium hover:text-stone-800 flex items-center justify-center gap-1"
                 >
                   <ArrowLeft className="w-4 h-4" /> Cancel
                 </button>
@@ -201,15 +205,15 @@ export default function Snap() {
         <h2 className="text-2xl font-semibold text-stone-800 mb-6">What to bring to your appointment:</h2>
         <div className="grid sm:grid-cols-2 md:grid-cols-3 gap-6">
           <div className="bg-stone-50 p-6 rounded-2xl border border-stone-100 shadow-sm">
-            <h4 className="font-bold text-stone-800 text-lg mb-2">ID</h4>
+            <h3 className="font-bold text-stone-800 text-lg mb-2">ID</h3>
             <p className="text-sm text-stone-600 font-medium">Driver's license, state ID, or birth certificate.</p>
           </div>
           <div className="bg-stone-50 p-6 rounded-2xl border border-stone-100 shadow-sm">
-            <h4 className="font-bold text-stone-800 text-lg mb-2">Proof of Income</h4>
+            <h3 className="font-bold text-stone-800 text-lg mb-2">Proof of Income</h3>
             <p className="text-sm text-stone-600 font-medium">Recent pay stubs or benefit letters.</p>
           </div>
           <div className="bg-stone-50 p-6 rounded-2xl border border-stone-100 shadow-sm">
-            <h4 className="font-bold text-stone-800 text-lg mb-2">Proof of Expenses</h4>
+            <h3 className="font-bold text-stone-800 text-lg mb-2">Proof of Expenses</h3>
             <p className="text-sm text-stone-600 font-medium">Rent/mortgage receipt, utility bills, medical bills.</p>
           </div>
         </div>

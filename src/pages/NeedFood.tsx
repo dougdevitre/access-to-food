@@ -27,7 +27,7 @@ export default function NeedFood() {
         
         {step === 1 && (
           <div className="space-y-6 animate-in fade-in slide-in-from-bottom-4 duration-500">
-            <h3 className="text-xl font-semibold text-stone-800 mb-6">How soon do you need food?</h3>
+            <h2 className="text-xl font-semibold text-stone-800 mb-6">How soon do you need food?</h2>
             
             <button 
               onClick={() => { setUrgency('immediate'); setStep(2); }}
@@ -55,18 +55,18 @@ export default function NeedFood() {
 
         {step === 2 && urgency === 'immediate' && (
           <div className="space-y-8 animate-in fade-in slide-in-from-right-8 duration-500">
-            <h3 className="text-xl font-semibold text-stone-800">Here are your fastest options:</h3>
+            <h2 className="text-xl font-semibold text-stone-800">Here are your fastest options:</h2>
             
             <div className="grid gap-6 md:grid-cols-2">
               <Link to="/pantries" className="bg-stone-50 rounded-2xl p-6 border border-stone-100 hover:border-emerald-400 hover:bg-emerald-50 transition-all shadow-sm hover:shadow-md">
                 <MapPin className="w-8 h-8 text-emerald-600 mb-4" />
-                <h4 className="font-bold text-stone-800 text-lg mb-2">Find an Open Pantry</h4>
+                <h3 className="font-bold text-stone-800 text-lg mb-2">Find an Open Pantry</h3>
                 <p className="text-sm text-stone-600 font-medium">Locate a partner pantry near you that is open right now.</p>
               </Link>
               
               <div className="bg-stone-50 rounded-2xl p-6 border border-stone-100 shadow-sm">
                 <Phone className="w-8 h-8 text-blue-600 mb-4" />
-                <h4 className="font-bold text-stone-800 text-lg mb-2">Call United Way 211</h4>
+                <h3 className="font-bold text-stone-800 text-lg mb-2">Call United Way 211</h3>
                 <p className="text-sm text-stone-600 font-medium mb-4">Get connected with emergency food resources immediately.</p>
                 <a href="tel:211" className="inline-flex items-center justify-center bg-blue-600 text-white font-medium px-6 py-2.5 rounded-xl hover:bg-blue-700 transition-colors">
                   Dial 2-1-1
@@ -82,18 +82,18 @@ export default function NeedFood() {
 
         {step === 2 && urgency === 'soon' && (
           <div className="space-y-8 animate-in fade-in slide-in-from-right-8 duration-500">
-            <h3 className="text-xl font-semibold text-stone-800">Here are the best ways to plan ahead:</h3>
+            <h2 className="text-xl font-semibold text-stone-800">Here are the best ways to plan ahead:</h2>
             
             <div className="grid gap-6 md:grid-cols-2">
               <Link to="/events" className="bg-stone-50 rounded-2xl p-6 border border-stone-100 hover:border-teal-400 hover:bg-teal-50 transition-all shadow-sm hover:shadow-md">
                 <Calendar className="w-8 h-8 text-teal-600 mb-4" />
-                <h4 className="font-bold text-stone-800 text-lg mb-2">Upcoming Events</h4>
+                <h3 className="font-bold text-stone-800 text-lg mb-2">Upcoming Events</h3>
                 <p className="text-sm text-stone-600 font-medium">Find a mobile market or drive-thru distribution event near you.</p>
               </Link>
               
               <Link to="/pantries" className="bg-stone-50 rounded-2xl p-6 border border-stone-100 hover:border-emerald-400 hover:bg-emerald-50 transition-all shadow-sm hover:shadow-md">
                 <MapPin className="w-8 h-8 text-emerald-600 mb-4" />
-                <h4 className="font-bold text-stone-800 text-lg mb-2">Find a Pantry</h4>
+                <h3 className="font-bold text-stone-800 text-lg mb-2">Find a Pantry</h3>
                 <p className="text-sm text-stone-600 font-medium">Locate a partner pantry and check their upcoming hours.</p>
               </Link>
               
@@ -103,7 +103,7 @@ export default function NeedFood() {
                     <span className="font-black text-amber-700">SNAP</span>
                   </div>
                   <div>
-                    <h4 className="font-bold text-stone-800 text-lg mb-2">Apply for SNAP (Food Stamps)</h4>
+                    <h3 className="font-bold text-stone-800 text-lg mb-2">Apply for SNAP (Food Stamps)</h3>
                     <p className="text-sm text-stone-600 font-medium">Get long-term assistance buying groceries. We can help you apply.</p>
                   </div>
                 </div>

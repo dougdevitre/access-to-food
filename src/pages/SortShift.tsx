@@ -259,7 +259,7 @@ export default function SortShift() {
       {phase === 'intro' && (
         <div className="grid md:grid-cols-2 gap-8">
           <div className="bg-white rounded-3xl p-8 border border-stone-100 shadow-[0_2px_8px_rgba(0,0,0,0.04)] space-y-6">
-            <h3 className="text-xl font-semibold text-stone-800">How it works</h3>
+            <h2 className="text-xl font-semibold text-stone-800">How it works</h2>
             <ul className="space-y-3 text-stone-600 font-medium text-sm">
               <li className="flex gap-2"><Timer className="w-5 h-5 text-emerald-600 shrink-0" /> Your shift lasts {SHIFT_SECONDS} seconds — sort each item before it moves on.</li>
               <li className="flex gap-2"><CheckCircle2 className="w-5 h-5 text-emerald-600 shrink-0" /> Correct sorts add pounds; every ~{LBS_PER_MEAL} lbs is a meal for a neighbor.</li>
@@ -267,10 +267,11 @@ export default function SortShift() {
               <li className="flex gap-2"><Trophy className="w-5 h-5 text-emerald-600 shrink-0" /> Post your score with your initials and climb the leaderboard.</li>
             </ul>
             <div>
-              <label className="block text-sm font-medium text-stone-700 mb-2 flex items-center gap-2">
-                <Users className="w-4 h-4 text-stone-400" /> Team event code (optional)
+              <label htmlFor="team-code" className="block text-sm font-medium text-stone-700 mb-2 flex items-center gap-2">
+                <Users className="w-4 h-4 text-stone-500" aria-hidden="true" /> Team event code (optional)
               </label>
               <input
+                id="team-code"
                 type="text"
                 value={teamCode}
                 onChange={(e) => setTeamCode(e.target.value.toUpperCase())}
@@ -289,7 +290,7 @@ export default function SortShift() {
               Start Shift
             </button>
             {!sortshiftEnabled && (
-              <p className="text-xs text-stone-400 font-medium">Game server not configured (VITE_SORTSHIFT_API_URL) — you'll play in practice mode.</p>
+              <p className="text-xs text-stone-500 font-medium">Game server not configured (VITE_SORTSHIFT_API_URL) — you'll play in practice mode.</p>
             )}
           </div>
 
@@ -354,7 +355,7 @@ export default function SortShift() {
       {(phase === 'finished' || phase === 'posted') && (
         <div className="grid md:grid-cols-2 gap-8">
           <div className="bg-white rounded-3xl p-8 border border-stone-100 shadow-[0_2px_8px_rgba(0,0,0,0.04)] space-y-6">
-            <h3 className="text-xl font-semibold text-stone-800">Shift complete!</h3>
+            <h2 className="text-xl font-semibold text-stone-800">Shift complete!</h2>
             <div className="grid grid-cols-2 gap-4">
               {stats.map((s) => (
                 <div key={s.label} className="bg-stone-50 rounded-2xl p-4 border border-stone-100">
@@ -366,9 +367,10 @@ export default function SortShift() {
 
             {phase === 'finished' && !practiceMode && token && (
               <form onSubmit={handlePost} className="space-y-3">
-                <label className="block text-sm font-medium text-stone-700">Post to leaderboard as (1-3 initials)</label>
+                <label htmlFor="initials" className="block text-sm font-medium text-stone-700">Post to leaderboard as (1-3 initials)</label>
                 <div className="flex gap-3">
                   <input
+                    id="initials"
                     type="text"
                     value={initials}
                     onChange={(e) => setInitials(e.target.value.toUpperCase().replace(/[^A-Z]/g, '').slice(0, 3))}
@@ -415,21 +417,21 @@ export default function SortShift() {
 function Leaderboard({ rows, scope }: { rows: LeaderboardRow[] | null; scope: string }) {
   return (
     <div className="bg-white rounded-3xl p-8 border border-stone-100 shadow-[0_2px_8px_rgba(0,0,0,0.04)]">
-      <h3 className="text-xl font-semibold text-stone-800 mb-6 flex items-center gap-3">
+      <h2 className="text-xl font-semibold text-stone-800 mb-6 flex items-center gap-3">
         <Trophy className="w-6 h-6 text-amber-500" />
-        Leaderboard <span className="text-sm font-medium text-stone-400 capitalize">({scope})</span>
-      </h3>
+        Leaderboard <span className="text-sm font-medium text-stone-500 capitalize">({scope})</span>
+      </h2>
       {!sortshiftEnabled ? (
-        <p className="text-stone-400 font-medium text-sm py-8 text-center">Leaderboard unavailable — the game server is not configured.</p>
+        <p className="text-stone-500 font-medium text-sm py-8 text-center">Leaderboard unavailable — the game server is not configured.</p>
       ) : rows === null ? (
-        <p className="text-stone-400 font-medium text-sm py-8 text-center">Could not load the leaderboard right now.</p>
+        <p className="text-stone-500 font-medium text-sm py-8 text-center">Could not load the leaderboard right now.</p>
       ) : rows.length === 0 ? (
-        <p className="text-stone-400 font-medium text-sm py-8 text-center">No scores yet — be the first on the board!</p>
+        <p className="text-stone-500 font-medium text-sm py-8 text-center">No scores yet — be the first on the board!</p>
       ) : (
         <ol className="space-y-2">
           {rows.map((row, i) => (
             <li key={`${row.initials}-${row.ts}-${i}`} className="flex items-center gap-4 bg-stone-50 rounded-xl px-4 py-3 border border-stone-100">
-              <span className={`w-7 h-7 rounded-full flex items-center justify-center text-xs font-bold ${i === 0 ? 'bg-amber-100 text-amber-700' : i === 1 ? 'bg-stone-200 text-stone-600' : i === 2 ? 'bg-orange-100 text-orange-700' : 'bg-white text-stone-400 border border-stone-200'}`}>{i + 1}</span>
+              <span className={`w-7 h-7 rounded-full flex items-center justify-center text-xs font-bold ${i === 0 ? 'bg-amber-100 text-amber-700' : i === 1 ? 'bg-stone-200 text-stone-600' : i === 2 ? 'bg-orange-100 text-orange-700' : 'bg-white text-stone-500 border border-stone-200'}`}>{i + 1}</span>
               <span className="font-mono font-bold text-stone-800 tracking-widest">{row.initials}</span>
               <span className="ml-auto font-semibold text-emerald-700">{row.meals} meals</span>
               {row.flagged > 0 && (

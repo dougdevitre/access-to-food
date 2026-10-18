@@ -39,8 +39,9 @@
       #splash.fade-out { opacity: 0; pointer-events: none; }
       #splash svg { animation: pulse 1.8s ease-in-out infinite; }
       #splash h1 { font-family: system-ui, sans-serif; font-size: 1.5rem; font-weight: 700; color: #047857; margin-top: 1rem; }
-      #splash p { font-family: system-ui, sans-serif; font-size: 0.875rem; color: #78716c; margin-top: 0.25rem; }
+      #splash p { font-family: system-ui, sans-serif; font-size: 0.875rem; color: #57534d; margin-top: 0.25rem; }
       @keyframes pulse { 0%, 100% { transform: scale(1); opacity: 1; } 50% { transform: scale(1.08); opacity: 0.7; } }
+      @media (prefers-reduced-motion: reduce) { #splash, #splash svg { animation: none; transition: none; } }
     </style>
   </head>
   <body>

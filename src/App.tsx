@@ -20,8 +20,9 @@ const SortShift = lazy(() => import('./pages/SortShift'));
 
 // Loading fallback
 const PageLoader = () => (
-  <div className="flex items-center justify-center min-h-[50vh]">
-    <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-emerald-600"></div>
+  <div role="status" className="flex items-center justify-center min-h-[50vh]">
+    <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-emerald-600" aria-hidden="true"></div>
+    <span className="sr-only">Loading…</span>
   </div>
 );
 
