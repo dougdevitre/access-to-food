@@ -8,7 +8,7 @@ manual checks below.
 ## 0. Automated smoke test
 
 ```bash
-npm run smoke -- https://food.cotrackpro.com
+npm run smoke -- https://food.dougdevitre.org
 ```
 
 Covers the `/api` health + error paths, the SPA rewrite (deep links + `/api`
@@ -22,12 +22,13 @@ functions are served there; use `vercel dev` or the real URL for those.)
 - [ ] `ANTHROPIC_API_KEY` set (a **rotated** key — the old one leaked via GitHub Pages).
 - [ ] `VITE_GOOGLE_MAPS_API_KEY` set, if maps are wanted (build-time var).
 - [ ] `VITE_SORTSHIFT_API_URL` set to the deployed game backend's API URL, if the game is wanted.
-- [ ] Custom domain `food.cotrackpro.com` added in Vercel (Settings → Domains) and a `CNAME food → cname.vercel-dns.com` record added at the cotrackpro.com DNS host; SSL provisioned. The canonical URLs (`index.html` og:url, `public/sitemap.xml`, `public/robots.txt`) and the game backend's prod `corsOrigins` (`sortshift-backend/bin/app.ts`) already point at it. If the final domain differs, update those and redeploy both the site and the CDK stack.
+- [x] Custom domain `food.dougdevitre.org` added in Vercel and a `CNAME food → <project-specific>.vercel-dns-016.com` record added in Route 53 (dougdevitre.org zone); SSL provisioned. `food.cotrackpro.com` stays attached as a secondary domain.
+- [ ] Canonical URLs (`index.html` og:url, `public/sitemap.xml`, `public/robots.txt`) point at `food.dougdevitre.org`. The game backend's prod `corsOrigins` (`sortshift-backend/bin/app.ts`) lists it first — **redeploy the CDK stack** for that to take effect.
 
 ## 2. Firebase (new origin)
 
-- [ ] Add `food.cotrackpro.com` (and the `*.vercel.app` alias) to **Firebase Auth → authorized domains**.
-- [ ] Add `food.cotrackpro.com` to the **Google Maps API key referrer allowlist**.
+- [ ] Add `food.dougdevitre.org` (plus `food.cotrackpro.com` and the `*.vercel.app` alias) to **Firebase Auth → authorized domains**.
+- [ ] Add `food.dougdevitre.org` (and `food.cotrackpro.com`) to the **Google Maps API key referrer allowlist** — maps fail on any origin not listed.
 - [ ] Pantries and Events pages load real data from Firestore on the deployed origin (public reads).
 
 ## 3. AI Assistant (needs `ANTHROPIC_API_KEY`)
