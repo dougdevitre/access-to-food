@@ -8,10 +8,12 @@
 > A community platform connecting people with food resources in the St. Louis area — pantry locators, distribution events, SNAP guidance, an AI food-access assistant, and tools for volunteers and pantry staff. Part of the Access To initiative.
 
 > Part of **[Access To](https://dougdevitre.org)** — open-source tools for the access gaps that matter most. [See all projects →](https://dougdevitre.org/#pillars)
+>
+> Maintained by **Doug Devitre, Community Development Catalyst** · [dougdevitre.org](https://dougdevitre.org)
 
 [![MIT License](https://img.shields.io/badge/license-MIT-blue.svg)](LICENSE)
 
-**Live site:** https://food.cotrackpro.com
+**Live site:** https://food.dougdevitre.org (also served at https://food.cotrackpro.com)
 
 ## Features
 
