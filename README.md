@@ -17,9 +17,9 @@
 
 ## Features
 
-- **Pantry directory & map** — browse partner food pantries with live inventory status, backed by Firestore
+- **Pantry directory** — browse partner food pantries with inventory status. Listings are built-in **sample data** for now, clearly labeled, with a pointer to 2-1-1.
 - **Distribution events** — upcoming mobile markets, pop-up pantries, and drive-thru distributions
-- **AI Assistant** — a Claude-powered chat assistant that can search the pantry database to answer "where can I get food near me?"
+- **AI Assistant** — a Claude-powered chat assistant for food-access questions. Until a verified directory is connected, it refers pantry searches to 2-1-1 instead of naming specific pantries.
 - **Inventory Scanner** — pantry staff photograph shelves and Claude vision estimates stock levels by category
 - **SNAP eligibility guide** — quick income-based eligibility estimate and application resources
 - **Volunteer & donate** — shift signups and donation information
@@ -30,7 +30,7 @@
 
 - **Frontend:** Vite + React 19 + TypeScript + Tailwind CSS 4, a single-page app served statically by Vercel (`BrowserRouter` with an SPA rewrite in `vercel.json`)
 - **AI backend:** two Vercel serverless functions — `api/assistant.ts` (chat with a pantry-search tool loop) and `api/scan.ts` (vision inventory analysis). The `ANTHROPIC_API_KEY` lives **only** in these functions; it is never embedded in the client bundle, and CI fails if it ever appears there.
-- **Data:** Firebase Firestore, accessed directly from the browser and guarded by `firestore.rules` (public read for pantries/events; writes require staff/admin roles)
+- **Data:** no database for now. Pantry, event and dashboard data is built-in sample data in `src/lib/sampleData.ts`. Firebase and Google Maps were removed (2026-10-20) until a verified live directory is chosen.
 - **Game backend:** `sortshift-backend/` is a standalone AWS CDK app (API Gateway + Lambda + DynamoDB) with HMAC-signed single-use shift tokens, server-side plausibility checks, and no PII (initials only). Deploy it per its own [README](sortshift-backend/README.md), then point the SPA at it with `VITE_SORTSHIFT_API_URL`; without it the game runs in practice mode.
 
 ## Getting Started
@@ -65,39 +65,28 @@ npm run dev
 vercel dev
 ```
 
-Other scripts: `npm run lint` (typecheck), `npm run build`, `npm run preview`, `npm run seed`.
+Other scripts: `npm run lint` (typecheck), `npm run build`, `npm run preview`.
 
 ## Environment Variables
 
 | Variable | Where it lives | Purpose |
 |---|---|---|
 | `ANTHROPIC_API_KEY` | Server only — Vercel dashboard / `.env` for `vercel dev` | Claude API access for `/api/assistant` and `/api/scan`. **Never** prefix with `VITE_` or add to `vite.config.ts` — that would publish it in the bundle. |
-| `VITE_GOOGLE_MAPS_API_KEY` | Build-time, embedded in the bundle by design | Google Maps for the pantry/event maps. Restrict by HTTP referrer in the Google Cloud console. |
 | `VITE_SORTSHIFT_API_URL` | Build-time, embedded in the bundle by design | Base URL of the deployed Sort the Shift API (CDK `ApiUrl` output). Unset = practice mode. |
-| `GOOGLE_APPLICATION_CREDENTIALS` | Local only, for `npm run seed` | Path to a Firebase service-account JSON. |
-
-## Seeding Sample Data
-
-Firestore rules only allow staff/admin writes to `pantries` and `events`, so seeding uses the Firebase Admin SDK:
-
-1. Firebase console → Project settings → Service accounts → **Generate new private key**, save as `serviceAccount.json` in the repo root (gitignored).
-2. `export GOOGLE_APPLICATION_CREDENTIALS=./serviceAccount.json`
-3. `npm run seed` (add `-- --force` to seed non-empty collections)
-
-This writes ~10 St. Louis-area pantries and 6 upcoming events matching the `firestore.rules` schema.
 
 ## Deployment
 
 The app deploys to Vercel (static build + serverless functions). After connecting the repo or running `vercel deploy`:
 
-1. Add `ANTHROPIC_API_KEY` (and optionally `VITE_GOOGLE_MAPS_API_KEY`) in Project → Settings → Environment Variables, then redeploy.
-2. Deploy Firestore rules when they change: `firebase deploy --only firestore:rules`.
+1. Add `ANTHROPIC_API_KEY` in Project → Settings → Environment Variables, then redeploy.
 
 CI (`.github/workflows/ci.yml`) typechecks, builds, and asserts the Anthropic key/SDK never reaches `dist/` on every PR and push to `main`. No secrets are needed at build time.
 
 ## Known Limitations
 
-- The app has no sign-in flow yet, so Firestore writes gated on staff/admin roles (pantry updates, inventory-scan saves) will be denied until authentication is added. Public reads (pantries, events) work for everyone.
+- Pantry, event and dashboard listings are sample data (fictional names, 555 numbers). Every listing page says so and points to 2-1-1.
+- No maps. Pantry and event cards keep their "Directions" links, which open a plain map search with no API key.
+- Inventory-scanner results are not saved.
 - Volunteer signups and donation flows are UI-only demos — they don't persist yet.
 
 ## Contributing

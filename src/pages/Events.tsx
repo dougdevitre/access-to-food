@@ -1,9 +1,6 @@
 import { useState, useEffect, useMemo } from 'react';
-import { collection, getDocs, query, orderBy, where } from 'firebase/firestore';
-import { db } from '../firebase';
-import { Calendar, MapPin, Clock, AlertCircle, List, Map as MapIcon, Navigation, Info, CalendarPlus } from 'lucide-react';
+import { Calendar, MapPin, Clock, AlertCircle, Navigation, Info, CalendarPlus } from 'lucide-react';
 import { format } from 'date-fns';
-import ResourceMap, { MapMarker } from '../components/ResourceMap';
 import { usePageMeta } from '../lib/usePageMeta';
 import { SAMPLE_EVENTS } from '../lib/sampleData';
 import { downloadICS } from '../lib/calendar';
@@ -36,7 +33,6 @@ function calculateDistance(lat1: number, lon1: number, lat2: number, lon2: numbe
 export default function Events() {
   const [events, setEvents] = useState<DistributionEvent[]>([]);
   const [loading, setLoading] = useState(true);
-  const [viewMode, setViewMode] = useState<'list' | 'map'>('list');
   const [userLocation, setUserLocation] = useState<{lat: number, lng: number} | null>(null);
   const [isLocating, setIsLocating] = useState(false);
   const [locationError, setLocationError] = useState<string | null>(null);
@@ -44,44 +40,12 @@ export default function Events() {
 
   usePageMeta('Distribution Events');
 
+  // Event data is built in (src/lib/sampleData.ts) until a verified live
+  // calendar is connected. The page always labels it as sample data.
   useEffect(() => {
-    async function fetchEvents() {
-      try {
-        const now = new Date();
-        // Only show upcoming events
-        const q = query(
-          collection(db, 'events'),
-          where('date', '>=', now),
-          orderBy('date', 'asc')
-        );
-        const snapshot = await getDocs(q);
-        const data = snapshot.docs.map(doc => {
-          const eventData = doc.data() as DistributionEvent;
-          // Mock coordinates if missing (around St. Louis)
-          const lat = eventData.latitude || 38.6270 + (Math.random() - 0.5) * 0.2;
-          const lng = eventData.longitude || -90.1994 + (Math.random() - 0.5) * 0.2;
-          return { id: doc.id, ...eventData, latitude: lat, longitude: lng };
-        });
-
-        // No upcoming events in the database — show sample events so the page
-        // isn't blank on a fresh deployment.
-        if (data.length === 0) {
-          setEvents(SAMPLE_EVENTS as unknown as DistributionEvent[]);
-          setUsingSample(true);
-          return;
-        }
-
-        setEvents(data);
-      } catch (error) {
-        console.error('Error fetching events:', error);
-        // Fall back to sample data so a read failure doesn't leave a blank page.
-        setEvents(SAMPLE_EVENTS as unknown as DistributionEvent[]);
-        setUsingSample(true);
-      } finally {
-        setLoading(false);
-      }
-    }
-    fetchEvents();
+    setEvents(SAMPLE_EVENTS as unknown as DistributionEvent[]);
+    setUsingSample(true);
+    setLoading(false);
   }, []);
 
   const handleGetLocation = () => {
@@ -152,22 +116,6 @@ export default function Events() {
       });
   }, [events, userLocation]);
 
-  const mapMarkers: MapMarker[] = useMemo(() => {
-    return sortedEvents
-      .filter(e => e.latitude && e.longitude)
-      .map(e => {
-        const eventDate = e.date?.toDate ? e.date.toDate() : new Date(e.date);
-        return {
-          id: e.id,
-          lat: e.latitude!,
-          lng: e.longitude!,
-          title: e.title,
-          type: 'event',
-          details: `${format(eventDate, 'MMM d, h:mm a')} - ${e.location}`
-        };
-      });
-  }, [sortedEvents]);
-
   return (
     <div className="max-w-4xl mx-auto space-y-6">
       <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
@@ -177,29 +125,6 @@ export default function Events() {
         </div>
 
         <div className="flex flex-col sm:flex-row gap-3">
-          <div className="flex bg-stone-100 p-1 rounded-full">
-            <button
-              onClick={() => setViewMode('list')}
-              aria-pressed={viewMode === 'list'}
-              className={`flex min-h-11 items-center gap-2 px-4 rounded-full text-sm font-medium transition-colors ${
-                viewMode === 'list' ? 'bg-white text-stone-800 shadow-sm' : 'text-stone-600 hover:text-stone-800'
-              }`}
-            >
-              <List className="w-4 h-4" />
-              List
-            </button>
-            <button
-              onClick={() => setViewMode('map')}
-              aria-pressed={viewMode === 'map'}
-              className={`flex min-h-11 items-center gap-2 px-4 rounded-full text-sm font-medium transition-colors ${
-                viewMode === 'map' ? 'bg-white text-stone-800 shadow-sm' : 'text-stone-600 hover:text-stone-800'
-              }`}
-            >
-              <MapIcon className="w-4 h-4" />
-              Map
-            </button>
-          </div>
-
           <button
             onClick={handleGetLocation}
             disabled={isLocating}
@@ -220,7 +145,7 @@ export default function Events() {
       {usingSample && (
         <div className="bg-blue-50 text-blue-800 p-3 rounded-xl border border-blue-100 text-sm flex items-center gap-2">
           <Info className="w-4 h-4 shrink-0" />
-          Showing sample events. Real distribution events will appear here once they're scheduled.
+          These are sample events, not real distributions. For food help today, dial <a href="tel:211" className="font-semibold underline">2-1-1</a>.
         </div>
       )}
 
@@ -238,10 +163,6 @@ export default function Events() {
           <AlertCircle className="w-12 h-12 text-stone-400 mx-auto mb-3" />
           <h2 className="text-lg font-medium text-stone-800">No upcoming events</h2>
           <p className="text-stone-500">Check back later for new distribution events.</p>
-        </div>
-      ) : viewMode === 'map' ? (
-        <div className="animate-in fade-in zoom-in-95 duration-300">
-          <ResourceMap markers={mapMarkers} userLocation={userLocation} />
         </div>
       ) : (
         <div className="space-y-6 animate-in fade-in slide-in-from-bottom-4 duration-300">

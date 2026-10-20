@@ -5,8 +5,6 @@ import { Send, Bot, User, Loader2, AlertTriangle } from 'lucide-react';
 import ReactMarkdown from 'react-markdown';
 import remarkGfm from 'remark-gfm';
 import rehypeRaw from 'rehype-raw';
-import { collection, getDocs, query } from 'firebase/firestore';
-import { db } from '../firebase';
 import { ApiError, getConfigured, postJson } from '../lib/api';
 
 // The system prompt, tool schema, model, and token budget live in
@@ -60,28 +58,17 @@ export default function Assistant() {
     getConfigured('/api/assistant').then(setConfigured);
   }, []);
 
-  const executeSearchPantries = async (searchTerm?: string) => {
-    try {
-      const q = query(collection(db, 'pantries'));
-      const snapshot = await getDocs(q);
-      let data = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
-
-      if (searchTerm) {
-        const lowerTerm = searchTerm.toLowerCase();
-        data = data.filter((p: any) => {
-          const orgName = (p.organization_name || p.name || '').toLowerCase();
-          const fullAddress = `${p.address || ''} ${p.city || ''} ${p.zip || ''}`.toLowerCase();
-          const county = (p.county || '').toLowerCase();
-          return orgName.includes(lowerTerm) || fullAddress.includes(lowerTerm) || county.includes(lowerTerm);
-        });
-      }
-
-      // Limit to top 5 to avoid exceeding token limits
-      return data.slice(0, 5);
-    } catch (error) {
-      console.error("Error fetching pantries:", error);
-      return { error: "Failed to fetch pantries from database." };
-    }
+  // No verified pantry directory is connected yet. The built-in listings are
+  // sample data (fictional names and 555 numbers), so the assistant must never
+  // recommend them. The tool returns a referral to 2-1-1 instead.
+  const executeSearchPantries = async (_searchTerm?: string) => {
+    return {
+      results: [],
+      note:
+        'No verified pantry directory is connected yet. Do not name specific pantries. ' +
+        'Tell the person to dial 2-1-1 (United Way, 24/7) or 1-800-427-4626 for current pantry locations and hours, ' +
+        'and to call 911 in an emergency.',
+    };
   };
 
   const handleSubmit = (e: React.FormEvent) => {

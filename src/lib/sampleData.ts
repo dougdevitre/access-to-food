@@ -1,8 +1,7 @@
-// Sample St. Louis-area data used as a graceful fallback when Firestore has no
-// pantries/events yet (unseeded project) or a read fails — so the app is never
-// blank. Pages surface a subtle "sample data" note when this is in use. Shapes
-// mirror what Pantries.tsx / Events.tsx / CommandCenter.tsx read, and the
-// Firestore schema in firestore.rules / scripts/seed.ts.
+// Built-in St. Louis-area SAMPLE data: fictional organizations and 555 phone
+// numbers. Pages always label it as sample data and point people to 2-1-1.
+// It stands in until a verified live directory is connected; the AI assistant
+// never recommends these listings.
 
 export interface SamplePantry {
   id: string;

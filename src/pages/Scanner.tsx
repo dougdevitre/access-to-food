@@ -1,8 +1,6 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { usePageMeta } from '../lib/usePageMeta';
-import { Camera, Upload, Loader2, CheckCircle2, AlertCircle, PackageSearch, AlertTriangle, Info, Save } from 'lucide-react';
-import { collection, addDoc, serverTimestamp } from 'firebase/firestore';
-import { db } from '../firebase';
+import { Camera, Upload, Loader2, CheckCircle2, AlertCircle, PackageSearch, AlertTriangle, Info } from 'lucide-react';
 import { ApiError, getConfigured, postJson } from '../lib/api';
 
 // Phone photos routinely exceed Vercel's 4.5 MB request-body limit, so images
@@ -30,8 +28,6 @@ export default function Scanner() {
   const [error, setError] = useState<string | null>(null);
 
   const [isDragging, setIsDragging] = useState(false);
-  const [isSaving, setIsSaving] = useState(false);
-  const [saveSuccess, setSaveSuccess] = useState(false);
   // null = backend availability unknown (still checking, or unreachable)
   const [configured, setConfigured] = useState<boolean | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
@@ -81,7 +77,6 @@ export default function Scanner() {
 
       setResults(null);
       setError(null);
-      setSaveSuccess(false);
     };
     reader.readAsDataURL(file);
   };
@@ -317,49 +312,9 @@ export default function Scanner() {
                   ))
                 )}
 
-                <div className="pt-6 mt-6 border-t border-stone-100">
-                  {saveSuccess ? (
-                    <div className="bg-emerald-50 border border-emerald-200 rounded-2xl p-4 text-center flex items-center justify-center gap-2 animate-in fade-in duration-300">
-                      <CheckCircle2 className="w-5 h-5 text-emerald-600" />
-                      <span className="font-semibold text-emerald-800">Saved to inventory database</span>
-                    </div>
-                  ) : (
-                    <button
-                      onClick={async () => {
-                        if (!results) return;
-                        setIsSaving(true);
-                        try {
-                          await addDoc(collection(db, 'inventory_scans'), {
-                            items: results,
-                            scannedAt: serverTimestamp(),
-                            totalCategories: results.length,
-                            criticalCount: results.filter(r => r.criticalShortage).length,
-                          });
-                          setSaveSuccess(true);
-                        } catch (err) {
-                          console.error('Error saving scan:', err);
-                          setError('Failed to save results. Please try again.');
-                        } finally {
-                          setIsSaving(false);
-                        }
-                      }}
-                      disabled={isSaving}
-                      className="w-full bg-stone-100 text-stone-700 font-semibold py-4 rounded-2xl hover:bg-stone-200 transition-colors shadow-sm flex items-center justify-center gap-2 disabled:opacity-50"
-                    >
-                      {isSaving ? (
-                        <>
-                          <Loader2 className="w-5 h-5 animate-spin" />
-                          Saving...
-                        </>
-                      ) : (
-                        <>
-                          <Save className="w-5 h-5" />
-                          Save to Database
-                        </>
-                      )}
-                    </button>
-                  )}
-                </div>
+                <p className="pt-6 mt-6 border-t border-stone-100 text-sm text-stone-500">
+                  Results are not saved. Take a screenshot if you need to keep them.
+                </p>
               </div>
             )}
           </div>

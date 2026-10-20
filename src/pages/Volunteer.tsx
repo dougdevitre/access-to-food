@@ -1,8 +1,7 @@
 import React, { useState, useRef, useMemo } from 'react';
 import { usePersistentState } from '../lib/usePersistentState';
 import { usePageMeta } from '../lib/usePageMeta';
-import { Camera, Upload, CheckCircle2, Calendar, Clock, Search, MapPin, Users, Bell, CalendarPlus, ChevronRight, List, Map as MapIcon, Navigation, AlertCircle } from 'lucide-react';
-import ResourceMap, { MapMarker } from '../components/ResourceMap';
+import { Camera, Upload, CheckCircle2, Calendar, Clock, Search, MapPin, Users, Bell, CalendarPlus, ChevronRight, Navigation, AlertCircle } from 'lucide-react';
 
 interface VolunteerShift {
   event_id: string;
@@ -85,7 +84,6 @@ const MOCK_SHIFTS: VolunteerShift[] = [
 export default function Volunteer() {
   usePageMeta('Volunteer');
   const [activeTab, setActiveTab] = useState<'search' | 'upcoming' | 'log'>('search');
-  const [viewMode, setViewMode] = useState<'list' | 'map'>('list');
   const [photo, setPhoto] = useState<string | null>(null);
   const [searchQuery, setSearchQuery] = useState('');
   const [myShifts, setMyShifts] = usePersistentState<string[]>('volunteer.myShifts', []);
@@ -245,19 +243,6 @@ export default function Volunteer() {
     return MOCK_SHIFTS.filter(shift => myShifts.includes(shift.event_id));
   }, [myShifts]);
 
-  const mapMarkers: MapMarker[] = useMemo(() => {
-    return filteredShifts
-      .filter(s => s.latitude && s.longitude)
-      .map(s => ({
-        id: s.event_id,
-        lat: s.latitude!,
-        lng: s.longitude!,
-        title: s.event_name,
-        type: 'volunteer',
-        details: `${new Date(s.date).toLocaleDateString('en-US', { month: 'short', day: 'numeric' })} - ${s.time}`
-      }));
-  }, [filteredShifts]);
-
   return (
     <div className="max-w-4xl mx-auto space-y-6 relative">
       {notification && (
@@ -318,29 +303,6 @@ export default function Volunteer() {
             </div>
 
             <div className="flex flex-col sm:flex-row gap-3">
-              <div className="flex bg-stone-100 p-1 rounded-full">
-                <button
-                  onClick={() => setViewMode('list')}
-                  aria-pressed={viewMode === 'list'}
-                  className={`flex min-h-11 items-center gap-2 px-4 rounded-full text-sm font-medium transition-colors ${
-                    viewMode === 'list' ? 'bg-white text-stone-800 shadow-sm' : 'text-stone-600 hover:text-stone-800'
-                  }`}
-                >
-                  <List className="w-4 h-4" />
-                  List
-                </button>
-                <button
-                  onClick={() => setViewMode('map')}
-                  aria-pressed={viewMode === 'map'}
-                  className={`flex min-h-11 items-center gap-2 px-4 rounded-full text-sm font-medium transition-colors ${
-                    viewMode === 'map' ? 'bg-white text-stone-800 shadow-sm' : 'text-stone-600 hover:text-stone-800'
-                  }`}
-                >
-                  <MapIcon className="w-4 h-4" />
-                  Map
-                </button>
-              </div>
-
               <button
                 onClick={handleGetLocation}
                 disabled={isLocating}
@@ -365,11 +327,7 @@ export default function Volunteer() {
             </div>
           )}
 
-          {viewMode === 'map' ? (
-            <div className="animate-in fade-in zoom-in-95 duration-300">
-              <ResourceMap markers={mapMarkers} userLocation={userLocation} />
-            </div>
-          ) : (
+          {(
             <div className="grid gap-6 animate-in fade-in slide-in-from-bottom-4 duration-300">
               {filteredShifts.length === 0 ? (
                 <div className="text-center py-12 bg-white rounded-3xl border border-stone-100 shadow-[0_2px_8px_rgba(0,0,0,0.04)]">
