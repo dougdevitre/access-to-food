@@ -1,8 +1,5 @@
 import { useState, useEffect, useMemo } from 'react';
-import { collection, getDocs, query } from 'firebase/firestore';
-import { db } from '../firebase';
-import { MapPin, Clock, Phone, AlertCircle, Search, Info, Navigation, List, Map as MapIcon, ChevronDown, ChevronUp } from 'lucide-react';
-import ResourceMap, { MapMarker } from '../components/ResourceMap';
+import { MapPin, Clock, Phone, AlertCircle, Search, Info, Navigation, ChevronDown, ChevronUp } from 'lucide-react';
 import { usePageMeta } from '../lib/usePageMeta';
 import { SAMPLE_PANTRIES } from '../lib/sampleData';
 
@@ -46,51 +43,17 @@ export default function Pantries() {
   const [userLocation, setUserLocation] = useState<{lat: number, lng: number} | null>(null);
   const [isLocating, setIsLocating] = useState(false);
   const [locationError, setLocationError] = useState<string | null>(null);
-  const [viewMode, setViewMode] = useState<'list' | 'map'>('list');
   const [expandedPantry, setExpandedPantry] = useState<string | null>(null);
   const [usingSample, setUsingSample] = useState(false);
 
   usePageMeta('Partner Agencies');
 
+  // Directory data is built in (src/lib/sampleData.ts) until a verified live
+  // directory is connected. The page always labels it as sample data.
   useEffect(() => {
-    async function fetchPantries() {
-      try {
-        const q = query(collection(db, 'pantries'));
-        const snapshot = await getDocs(q);
-        const data = snapshot.docs.map((doc, index) => {
-          const pantryData = doc.data() as Pantry;
-          // Mock coordinates if missing (around St. Louis)
-          const lat = pantryData.latitude || 38.6270 + (Math.random() - 0.5) * 0.2;
-          const lng = pantryData.longitude || -90.1994 + (Math.random() - 0.5) * 0.2;
-          return { id: doc.id, ...pantryData, latitude: lat, longitude: lng };
-        });
-
-        // No pantries in the database yet — show sample data so the page
-        // isn't blank on a fresh deployment.
-        if (data.length === 0) {
-          setPantries(SAMPLE_PANTRIES as Pantry[]);
-          setUsingSample(true);
-          return;
-        }
-
-        // Sort alphabetically by default
-        data.sort((a, b) => {
-          const nameA = a.organization_name || a.name || '';
-          const nameB = b.organization_name || b.name || '';
-          return nameA.localeCompare(nameB);
-        });
-
-        setPantries(data);
-      } catch (error) {
-        console.error('Error fetching pantries:', error);
-        // Fall back to sample data so a read failure doesn't leave a blank page.
-        setPantries(SAMPLE_PANTRIES as Pantry[]);
-        setUsingSample(true);
-      } finally {
-        setLoading(false);
-      }
-    }
-    fetchPantries();
+    setPantries(SAMPLE_PANTRIES as Pantry[]);
+    setUsingSample(true);
+    setLoading(false);
   }, []);
 
   const handleGetLocation = () => {
@@ -175,19 +138,6 @@ export default function Pantries() {
     return p.address || 'Address not provided';
   };
 
-  const mapMarkers: MapMarker[] = useMemo(() => {
-    return filteredPantries
-      .filter(p => p.latitude && p.longitude)
-      .map(p => ({
-        id: p.id,
-        lat: p.latitude!,
-        lng: p.longitude!,
-        title: p.organization_name || p.name || 'Unnamed Pantry',
-        type: 'pantry',
-        details: formatAddress(p)
-      }));
-  }, [filteredPantries]);
-
   return (
     <div className="max-w-4xl mx-auto space-y-6">
       <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
@@ -197,29 +147,6 @@ export default function Pantries() {
         </div>
         
         <div className="flex flex-col sm:flex-row gap-3">
-          <div className="flex bg-stone-100 p-1 rounded-full">
-            <button
-              onClick={() => setViewMode('list')}
-              aria-pressed={viewMode === 'list'}
-              className={`flex min-h-11 items-center gap-2 px-4 rounded-full text-sm font-medium transition-colors ${
-                viewMode === 'list' ? 'bg-white text-stone-800 shadow-sm' : 'text-stone-600 hover:text-stone-800'
-              }`}
-            >
-              <List className="w-4 h-4" />
-              List
-            </button>
-            <button
-              onClick={() => setViewMode('map')}
-              aria-pressed={viewMode === 'map'}
-              className={`flex min-h-11 items-center gap-2 px-4 rounded-full text-sm font-medium transition-colors ${
-                viewMode === 'map' ? 'bg-white text-stone-800 shadow-sm' : 'text-stone-600 hover:text-stone-800'
-              }`}
-            >
-              <MapIcon className="w-4 h-4" />
-              Map
-            </button>
-          </div>
-
           <button
             onClick={handleGetLocation}
             disabled={isLocating}
@@ -252,7 +179,7 @@ export default function Pantries() {
       {usingSample && (
         <div className="bg-blue-50 text-blue-800 p-3 rounded-xl border border-blue-100 text-sm flex items-center gap-2">
           <Info className="w-4 h-4 shrink-0" />
-          Showing sample agencies. Live listings will appear here once the directory is populated.
+          These are sample listings, not real agencies. For food help today, dial <a href="tel:211" className="font-semibold underline">2-1-1</a>.
         </div>
       )}
 
@@ -270,10 +197,6 @@ export default function Pantries() {
           <AlertCircle className="w-12 h-12 text-stone-400 mx-auto mb-3" />
           <h2 className="text-lg font-medium text-stone-800">No agencies found</h2>
           <p className="text-stone-500">Try adjusting your search terms.</p>
-        </div>
-      ) : viewMode === 'map' ? (
-        <div className="animate-in fade-in zoom-in-95 duration-300">
-          <ResourceMap markers={mapMarkers} userLocation={userLocation} />
         </div>
       ) : (
         <div className="grid gap-6 md:grid-cols-2 animate-in fade-in slide-in-from-bottom-4 duration-300">

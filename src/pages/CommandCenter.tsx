@@ -1,9 +1,6 @@
 import React, { useState, useEffect, useMemo } from 'react';
-import { collection, getDocs, query } from 'firebase/firestore';
-import { db } from '../firebase';
-import { AlertTriangle, Activity, Users, Map as MapIcon, ShieldAlert, TrendingUp, PackageX, CheckCircle2 } from 'lucide-react';
+import { AlertTriangle, Activity, Users, Map as MapIcon, MapPin, ShieldAlert, TrendingUp, PackageX, CheckCircle2 } from 'lucide-react';
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Legend } from 'recharts';
-import ResourceMap, { MapMarker } from '../components/ResourceMap';
 import { usePageMeta } from '../lib/usePageMeta';
 import { SAMPLE_PANTRIES } from '../lib/sampleData';
 
@@ -41,36 +38,11 @@ export default function CommandCenter() {
 
   usePageMeta('Command Center');
 
+  // Built-in sample directory until a verified live directory is connected.
   useEffect(() => {
-    async function fetchPantries() {
-      try {
-        const q = query(collection(db, 'pantries'));
-        const snapshot = await getDocs(q);
-        const data = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as Pantry));
-        // Fall back to sample data so the dashboard isn't empty on a fresh deploy.
-        setPantries(data.length > 0 ? data : (SAMPLE_PANTRIES as Pantry[]));
-      } catch (error) {
-        console.error('Error fetching pantries:', error);
-        setPantries(SAMPLE_PANTRIES as Pantry[]);
-      } finally {
-        setLoading(false);
-      }
-    }
-    fetchPantries();
+    setPantries(SAMPLE_PANTRIES as Pantry[]);
+    setLoading(false);
   }, []);
-
-  const mapMarkers: MapMarker[] = useMemo(() => {
-    return pantries
-      .filter(p => p.latitude && p.longitude)
-      .map(p => ({
-        id: p.id,
-        lat: p.latitude!,
-        lng: p.longitude!,
-        title: p.organization_name || p.name || 'Unnamed Pantry',
-        type: 'pantry' as const,
-        details: `Stock: ${p.inventoryStatus || 'unknown'}`
-      }));
-  }, [pantries]);
 
   const criticalPantries = useMemo(() => {
     return pantries.filter(p => p.inventoryStatus === 'empty' || p.inventoryStatus === 'low');
@@ -152,8 +124,8 @@ export default function CommandCenter() {
         <div className="lg:col-span-2 bg-white rounded-3xl border border-stone-100 shadow-[0_2px_8px_rgba(0,0,0,0.04)] overflow-hidden flex flex-col">
           <div className="p-6 border-b border-stone-100 flex flex-wrap gap-3 justify-between items-center">
             <h2 className="font-semibold text-stone-800 flex items-center gap-2">
-              <MapIcon className="w-5 h-5 text-stone-400" />
-              Food Access Map
+              <MapPin className="w-5 h-5 text-stone-400" />
+              Pantry Stock Levels <span className="text-xs font-normal text-stone-400">(sample data)</span>
             </h2>
             <div className="flex flex-wrap gap-3 text-xs font-medium text-stone-600">
               <span className="flex items-center gap-1.5"><div className="w-2 h-2 rounded-full bg-emerald-500"></div> Good</span>
@@ -161,13 +133,29 @@ export default function CommandCenter() {
               <span className="flex items-center gap-1.5"><div className="w-2 h-2 rounded-full bg-rose-500"></div> Empty</span>
             </div>
           </div>
-          <div className="w-full h-[300px]">
+          <ul className="w-full h-[300px] overflow-y-auto divide-y divide-stone-100">
             {loading ? (
-              <div className="flex items-center justify-center h-full text-stone-500">Loading map data...</div>
+              <li className="flex items-center justify-center h-full text-stone-500">Loading pantries...</li>
             ) : (
-              <ResourceMap markers={mapMarkers} userLocation={null} />
+              pantries.map(p => (
+                <li key={p.id} className="flex items-center justify-between gap-3 px-6 py-3 text-sm">
+                  <span className="text-stone-700">{p.organization_name || p.name || 'Unnamed Pantry'}</span>
+                  <span className="flex items-center gap-1.5 text-xs font-medium text-stone-600">
+                    <span
+                      aria-hidden="true"
+                      className={`w-2 h-2 rounded-full ${
+                        p.inventoryStatus === 'high' ? 'bg-emerald-500'
+                        : p.inventoryStatus === 'medium' ? 'bg-amber-500'
+                        : p.inventoryStatus === 'low' || p.inventoryStatus === 'empty' ? 'bg-rose-500'
+                        : 'bg-stone-300'
+                      }`}
+                    />
+                    {p.inventoryStatus || 'unknown'}
+                  </span>
+                </li>
+              ))
             )}
-          </div>
+          </ul>
         </div>
 
         {/* Inventory Alerts */}
