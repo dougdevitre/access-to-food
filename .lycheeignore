@@ -23,7 +23,3 @@
 
 # The SVG XML namespace in index.html identifies a format; it is not a link.
 ^https?://www\.w3\.org/2000/svg
-
-# dougdevitre.org is down: the Access To hub's CNAME was deleted on 2026-04-07.
-# Temporary — remove when the domain is reattached.
-^https?://(www\.)?dougdevitre\.org
