@@ -6,8 +6,9 @@
 - `vercel dev` — full stack: SPA + `/api` serverless functions (needs `ANTHROPIC_API_KEY` in `.env`)
 - `npm run lint` — `tsc --noEmit`; typechecks `src/`, `api/`, and `scripts/` (tsconfig has no `include`)
 - `npm run build` — production build to `dist/`
+- `npm test` — Vitest over `test/**/*.test.{ts,tsx}` (Node by default; a test that needs a DOM opts in with `// @vitest-environment jsdom` and `@testing-library/react`). Suites: `api` (the `/api` handlers' gating), `client-api` (`src/lib/api`), `assistant-loop` (the tool loop with `/api/assistant` mocked), `sortshift` (client rules against the backend's `validate.ts`), `no-client-sdk` (no value import of `@anthropic-ai/sdk` under `src/`), `disclaimer`, `phone-check`, `calendar`. `sortshift-backend/` has its own `npm test`.
 
-There are no tests yet; CI runs lint + build + a bundle-leak grep.
+CI (`.github/workflows/ci.yml`) runs lint, test, build and a bundle-leak grep, plus the backend's typecheck and tests.
 
 ## Architecture
 
@@ -20,4 +21,4 @@ There are no tests yet; CI runs lint + build + a bundle-leak grep.
 
 ## Hard constraints
 
-- **The Anthropic API key is server-side only.** Never add it to `vite.config.ts` `define`, any `VITE_`-prefixed var, or client code. Client imports of `@anthropic-ai/sdk` must be type-only (`import type Anthropic from '@anthropic-ai/sdk'`). CI greps `dist/assets` for `sk-ant-|dangerouslyAllowBrowser|ANTHROPIC_API_KEY` and fails on a match.
+- **The Anthropic API key is server-side only.** Never add it to `vite.config.ts` `define`, any `VITE_`-prefixed var, or client code. Client imports of `@anthropic-ai/sdk` must be type-only (`import type Anthropic from '@anthropic-ai/sdk'`). CI greps `dist/assets` for `sk-ant-|dangerouslyAllowBrowser|api\.anthropic\.com` and fails on a match; `test/no-client-sdk.test.ts` fails earlier, at the source.
